@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>NVDA 주가 확인</title>
+</head>
+<body>
+  <h1>엔비디아(NVDA) 주가</h1>
+
+  <!-- 여기에 데이터가 표시됩니다 -->
+  <p>현재가: <span id="price">불러오는 중...</span></p>
+
+  <script>
+    // 백엔드에서 데이터 가져오기
+    fetch("http://127.0.0.1:8000/stock/NVDA")
+      .then(res => res.json())
+      .then(data => {
+        // 데이터에서 현재가만 꺼내기
+        const price = data["Global Quote"]["05. price"];
+        // 화면의 span 태그에 값 넣기
+        document.getElementById("price").textContent = price;
+      });
+  </script>
+</body>
+</html>
