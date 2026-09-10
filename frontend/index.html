@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Insight AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 헤더 섹션 -->
+  <header class="header">
+    <h1 class="header__title">📈 Stock Insight AI</h1>
+    <p class="header__subtitle">NVIDIA(NVDA) 주가 분석 챗봇</p>
+  </header>
+
+  <!-- Summary 섹션 -->
+  <section class="summary">
+    <div class="card">
+      <p class="card__label">평균가</p>
+      <p class="card__value">$205.40</p>
+    </div>
+    <div class="card">
+      <p class="card__label">최고가</p>
+      <p class="card__value">$242.10</p>
+    </div>
+    <div class="card">
+      <p class="card__label">최저가</p>
+      <p class="card__value">$168.90</p>
+    </div>
+    <div class="card">
+      <p class="card__label">등락률</p>
+      <p class="card__value">+18.2%</p>
+    </div>
+  </section>
+
+  <section class="chat">
+    <h2 class="chat__title">AI Chat</h2>
+
+    <div class="chat__messages" id="chatMessages">
+      <!-- 초기 메시지도 message-row로 감쌈 -->
+      <div class="message-row message-row--ai">
+        <div class="message message--ai">
+          안녕하세요! NVIDIA 주가에 대해 무엇이든 물어보세요.
+        </div>
+      </div>
+
+      <div class="message-row message-row--user">
+        <div class="message message--user">
+          최근 흐름 어때?
+        </div>
+      </div>
+
+      <div class="message-row message-row--ai">
+        <div class="message message--ai">
+          최근 100거래일 동안 평균 종가는 205.4달러였고, 단기 상승 추세입니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="chat__input">
+      <input
+        type="text"
+        class="chat__input-field"
+        id="messageInput"
+        placeholder="메시지를 입력하세요..."
+      />
+      <button class="chat__input-btn" id="sendBtn">전송</button>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

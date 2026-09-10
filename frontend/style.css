@@ -1,0 +1,169 @@
+/* ===== 기본 설정 ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background-color: #f4f6fb;
+  color: #333;
+}
+
+/* ===== 헤더 ===== */
+.header {
+  text-align: center;
+  padding: 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header__title {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.header__subtitle {
+  font-size: 14px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* ===== Summary 카드 ===== */
+.summary {
+  display: flex;
+  gap: 16px;
+  padding: 24px;
+  max-width: 900px;   /* 채팅 영역과 폭 맞춤 */
+  margin: 0 auto;
+}
+
+.card {
+  flex: 1;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.card__label {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.card__value {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* ===== Chat 영역 ===== */
+.chat {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 24px;
+}
+
+.chat__title {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+/* 메시지 목록 */
+.chat__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  margin-bottom: 16px;
+}
+
+/* ===== 한 줄(시간 + 말풍선) ===== */
+.message-row {
+  display: flex;
+  align-items: flex-end;   /* 시간을 말풍선 바닥에 맞춤 */
+  gap: 8px;
+  max-width: 75%;
+}
+
+/* 사용자 줄: 오른쪽 정렬 */
+.message-row--user {
+  align-self: flex-end;
+  justify-content: flex-end;
+}
+
+/* AI 줄: 왼쪽 정렬 */
+.message-row--ai {
+  align-self: flex-start;
+  justify-content: flex-start;
+}
+
+/* ===== 말풍선 ===== */
+.message {
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* 사용자 말풍선 (파란색) */
+.message--user {
+  background-color: #4f6ef7;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+/* AI 말풍선 (회색) */
+.message--ai {
+  background-color: #e9ebf0;
+  color: #333;
+  border-bottom-left-radius: 4px;
+}
+
+/* ===== 말풍선 밖 시간 ===== */
+.message__time {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  padding-bottom: 2px;
+}
+
+/* ===== 입력 영역 ===== */
+.chat__input {
+  display: flex;
+  gap: 10px;
+}
+
+.chat__input-field {
+  flex: 1;
+  padding: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.chat__input-field:focus {
+  border-color: #4f6ef7;
+}
+
+.chat__input-btn {
+  padding: 0 24px;
+  background-color: #4f6ef7;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chat__input-btn:hover {
+  background-color: #3b56d4;
+}
