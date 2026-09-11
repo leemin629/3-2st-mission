@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routers import stock   # 라우터 불러오기
 import requests
 import os
 from dotenv import load_dotenv
@@ -13,6 +14,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(stock.router)  # ← 라우터 연결! 
 
 # 환경변수 로드
 load_dotenv()
@@ -26,11 +28,6 @@ def root():
 # 주가 조회 (server.py에서 가져옴)
 @app.get("/stock/{symbol}")
 def get_stock(symbol: str):
-    url = "https://www.alphavantage.co/query"
-    params = {
-        "function": "GLOBAL_QUOTE",
-        "symbol": symbol,
-        "apikey": API_KEY
-    }
-    response = requests.get(url, params=params)
-    return response.json()
+    return get_stock_data(symbol)  # ← 서비스 호출만!
+
+   
