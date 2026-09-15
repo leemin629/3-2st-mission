@@ -13,21 +13,37 @@ body {
 
 /* ===== 헤더 ===== */
 .header {
-  text-align: center;
-  padding: 20px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  display: flex;              /* 이모티콘 + 글자 가로 배치 */
+  align-items: center;        /* 🎯 세로 중앙 정렬 (균형!) */
+  justify-content: center;    /* 전체 가운데로 */
+  gap: 20px;                  /* 이모티콘 ↔ 글자 간격 */
+  padding: 24px;              /* 위아래 여백 */
+}
+
+/* 이모티콘 크게! (두 줄 높이) */
+.header__icon {
+  font-size: 72px;            /* 🎯 크게! */
+  line-height: 1;             /* 세로 여백 제거 */
+}
+
+/* 제목 + 부제목 묶음 */
+.header__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;    /* 🎯 이 줄 추가! (가로 중앙 정렬) */
 }
 
 .header__title {
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0;                  /* 🎯 기본 여백 제거 (균형!) */
 }
 
 .header__subtitle {
-  font-size: 14px;
-  color: #888;
-  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0;                  /* 🎯 기본 여백 제거 (균형!) */
 }
 
 /* ===== Summary 카드 ===== */
@@ -76,7 +92,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 400px;
+  height: 700px;
   overflow-y: auto;
   padding: 10px;
   margin-bottom: 16px;
@@ -166,4 +182,16 @@ body {
 
 .chat__input-btn:hover {
   background-color: #3b56d4;
+}
+
+/* 채팅 답변의 제목 스타일 */
+.chat-title {
+  font-size: 18px;
+  font-weight: 500;         /* 굵기 제거 */
+  color: #4a4a6a;
+  display: inline-block;
+  margin-top: 5px;
+  padding-left: 8px;
+  border-left: 3px solid #6366f1;  /* 왼쪽 파란 막대! */
+  margin-bottom: 8px;    /* 🎯 이 줄 추가! (제목-본문 간격) */
 }

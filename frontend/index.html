@@ -9,10 +9,15 @@
 <body>
 
   <!-- 헤더 섹션 -->
-  <header class="header">
-    <h1 class="header__title">📈 Stock Insight AI</h1>
+  <!-- 헤더 섹션 -->
+<header class="header">
+  <span class="header__icon">📈</span>
+
+  <div class="header__text">
+    <h1 class="header__title">Stock Insight AI</h1>
     <p class="header__subtitle">NVIDIA(NVDA) 주가 분석 챗봇</p>
-  </header>
+  </div>
+</header>
 
   <!-- Summary 섹션 -->
   <section class="summary">
@@ -24,17 +29,19 @@
       <div class="card__label">현재가</div>
       <div class="card__value" id="currentPrice">-</div>
     </div>
-    <div class="card">
+    <!-- 최고가 카드 -->
+   <div class="card">
       <p class="card__label">최고가</p>
-      <p class="card__value">$242.10</p>
+      <p class="card__value" id="highPrice">$242.10</p>
     </div>
-    <div class="card">
+<!-- 최저가 카드 -->
+   <div class="card">
       <p class="card__label">최저가</p>
-      <p class="card__value">$168.90</p>
-    </div>
-    <div class="card">
+      <p class="card__value" id="lowPrice">$168.90</p>
+   </div>
+   <div class="card">   
       <p class="card__label">등락률</p>
-      <p class="card__value">+18.2%</p>
+      <p class="card__value" id="changePercent">+18.2%</p>
     </div>
   </section>
 
