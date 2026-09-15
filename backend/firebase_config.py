@@ -3,7 +3,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 # 🔑 다운받은 JSON 파일 이름 (.json 꼭 붙이기!)
-credential_path = "nvda-catch-up-firebase-adminsdk-fbsvc-ee033dc64f.json"
+credential_path = "nvda-catch-up-firebase-adminsdk-fbsvc-f2843fe2ab.json"
 
 # Firebase 앱 초기화
 cred = credentials.Certificate(credential_path)
