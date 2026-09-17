@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from firebase_config import db
 
@@ -13,32 +13,29 @@ class DataItem(BaseModel):
 
 
 # ===== 데이터 요약 (기존 그대로 + 방어코드 1줄만 수정) =====
+from fastapi import APIRouter, HTTPException, Query
+
 @router.get("/summary")
-async def get_summary():
-    # NVDA만 가져오기! 🎯
+async def get_summary(symbol: str = Query("NVDA")):  # ← 종목을 받도록!
+    # 허용된 종목만 통과 (안전장치)
+    allowed = ["NVDA", "AAPL", "TSLA", "MSFT", "GOOGL"]
+    if symbol not in allowed:
+        raise HTTPException(status_code=400, detail="지원하지 않는 종목입니다")
+
+    # 요청받은 종목으로 조회
     docs = db.collection("data")\
-        .where("symbol", "==", "NVDA")\
+        .where("symbol", "==", symbol)\
         .stream()
-    
+
     prices = []
     records = []
-
-    for doc in docs:
-        d = doc.to_dict()
-        prices.append(d["value"])
-        records.append({
-            "date": d["date"], 
-            "value": d["value"]
-        })
-    ...
-
-    for doc in docs:
+    for doc in docs:                    # 루프는 한 번만!
         d = doc.to_dict()
         prices.append(d["value"])
         records.append({"date": d["date"], "value": d["value"]})
 
     if not prices:
-        return {"error": "데이터가 없습니다. seed_data.py를 실행하세요."}
+        return {"error": f"{symbol} 데이터가 없습니다."}
 
     avg_price = sum(prices) / len(prices)
     high_price = max(prices)
@@ -47,9 +44,7 @@ async def get_summary():
     records.sort(key=lambda x: x["date"])
     oldest = records[0]["value"]
     latest = records[-1]["value"]
-
-    change = latest - oldest
-    change_percent = (change / oldest) * 100 if oldest != 0 else 0   # ← 방어코드!
+    change_percent = ((latest - oldest) / oldest) * 100 if oldest != 0 else 0
 
     if change_percent > 0:
         trend = "상승"
@@ -59,7 +54,7 @@ async def get_summary():
         trend = "보합"
 
     return {
-        "symbol": "NVDA",
+        "symbol": symbol,               # ← 요청받은 종목 반환
         "count": len(prices),
         "current_price": round(latest, 2),
         "average_price": round(avg_price, 2),
