@@ -15,10 +15,22 @@ class DataItem(BaseModel):
 # ===== 데이터 요약 (기존 그대로 + 방어코드 1줄만 수정) =====
 @router.get("/summary")
 async def get_summary():
-    docs = db.collection("data").stream()
-
+    # NVDA만 가져오기! 🎯
+    docs = db.collection("data")\
+        .where("symbol", "==", "NVDA")\
+        .stream()
+    
     prices = []
     records = []
+
+    for doc in docs:
+        d = doc.to_dict()
+        prices.append(d["value"])
+        records.append({
+            "date": d["date"], 
+            "value": d["value"]
+        })
+    ...
 
     for doc in docs:
         d = doc.to_dict()
