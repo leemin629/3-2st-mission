@@ -10,7 +10,7 @@ venv/
 # Firebase 인증키
 *firebase-adminsdk*.json
 backend/nvda-catch-up-firebase-adminsdk-fbsvc-*.json
-
+nvda-catch-up-firebase-adminsdk-fbsvc-f2843fe2ab.json
 
 # 백업 폴더 (선택)
 _backup/
