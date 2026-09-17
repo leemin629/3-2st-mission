@@ -48,8 +48,8 @@ MODELS = [
 ]
 
 # 📊 Firestore에서 요약 통계 계산
-def get_stock_summary():
-    docs = db.collection("data").stream()
+def get_stock_summary(symbol="NVDA"):
+    docs = db.collection("data").where("symbol", "==", symbol).stream()
     records = []
     for doc in docs:
         d = doc.to_dict()
@@ -75,16 +75,32 @@ def get_stock_summary():
         "trend": trend
     }
 
-# 💬 채팅 엔드포인트 (★ mount보다 위에 있어야 함!)
+# 💬 채팅 엔드포인트
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    # 📊 실데이터 요약 가져오기
-    summary = get_stock_summary()
+    # 🔍 종목별 별명 사전 (한글/영문 다 인식!)
+    SYMBOL_MAP = {
+        "NVDA":  ["NVDA", "엔비디아", "NVIDIA"],
+        "AAPL":  ["AAPL", "애플", "APPLE"],
+        "TSLA":  ["TSLA", "테슬라", "TESLA"],
+        "MSFT":  ["MSFT", "마이크로소프트", "MICROSOFT"],
+        "GOOGL": ["GOOGL", "구글", "GOOGLE", "알파벳"],
+    }
 
-    # 데이터를 프롬프트용 문장으로 변환
-    if summary:
+    selected = None
+    msg_upper = req.message.upper()
+    for symbol, keywords in SYMBOL_MAP.items():
+        if any(kw.upper() in msg_upper for kw in keywords):
+            selected = symbol
+            break
+
+    # 종목 있을 때만 데이터 가져오기!
+    summary = get_stock_summary(selected) if selected else None
+
+    if selected and summary:
+        # ✅ 특정 종목 → 데이터 기반 답변
         data_context = f"""
-[NVDA 최근 100일 실제 데이터]
+[{selected} 최근 100일 실제 데이터]
 - 현재가: ${summary['current']}
 - 평균가: ${summary['average']}
 - 최고가: ${summary['high']}
@@ -92,20 +108,33 @@ async def chat(req: ChatRequest):
 - 변동률: {summary['change_percent']}%
 - 추세: {summary['trend']}
 """
-    else:
-        data_context = "(데이터 없음)"
-
-    system_prompt = f"""너는 NVDA 주가 분석 챗봇이야. 아래 규칙을 반드시 지켜서 답변해:
+        system_prompt = f"""너는 {selected} 주가 분석 챗봇이야. 아래 규칙을 반드시 지켜서 답변해:
 
 1. 반드시 아래 제공된 [실제 데이터]에 근거해서 답변한다.
-2. 데이터에 없는 내용은 추측하지 말고, 일반적인 설명만 덧붙인다.
+2. 데이터에 없는 내용은 일반 지식으로 보충한다.
 3. 핵심만 간결하게 답변한다.
 4. 내용이 여러 개면 '## 제목'으로 주제를 나눈다.
 5. 강조는 <b>강조</b> HTML 태그를 사용한다.
 6. 각 주제는 최대 3줄 이내로 요약한다.
 7. 불필요한 서론과 면책조항은 쓰지 않는다.
+8. 항상 정중하고 공손한 존댓말('~습니다', '~됩니다')로 답변한다.
 
 {data_context}
+
+사용자 질문: """
+
+    else:
+        # 🧠 시장 전반 질문 → 애널리스트 모드!
+        system_prompt = """너는 미국 주식시장 전문 애널리스트야. 아래 규칙을 반드시 지켜:
+
+1. 미국 주식시장, 산업, 경제 전반에 대해 전문가답게 답변한다.
+2. 핵심만 간결하게 답변한다.
+3. 내용이 여러 개면 '## 제목'으로 주제를 나눈다.
+4. 강조는 <b>강조</b> HTML 태그를 사용한다.
+5. 각 주제는 최대 3줄 이내로 요약한다.
+6. 특정 종목 상세 데이터가 필요하면 "NVDA, AAPL, TSLA, MSFT, GOOGL 중 하나를 물어보세요"라고 안내한다.
+7. 불필요한 서론과 면책조항은 쓰지 않는다.
+8. 항상 정중하고 공손한 존댓말('~습니다', '~됩니다')로 답변한다.
 
 사용자 질문: """
 
@@ -123,7 +152,7 @@ async def chat(req: ChatRequest):
                 "created_at": firestore.SERVER_TIMESTAMP
             })
 
-            return {"reply": reply, "model": model_name}
+            return {"reply": reply, "model": model_name, "symbol": selected}
         except Exception as e:
             print(f"{model_name} 실패: {e}")
             continue
@@ -137,10 +166,18 @@ async def get_chat_history():
     history = []
     for doc in docs:
         data = doc.to_dict()
+
+        # 🕐 시간을 "14:05" 형태로 변환
+        created = data.get("created_at")
+        time_str = ""
+        if created:
+            time_str = created.strftime("%H:%M")  # 시:분만 뽑기
+
         history.append({
             "message": data.get("message"),
             "reply": data.get("reply"),
             "model": data.get("model"),
+            "time": time_str,  # ← 시간 추가! ⏰
         })
 
     return {"history": history}

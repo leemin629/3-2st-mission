@@ -159,10 +159,11 @@ async function loadHistory() {
 
     // 저장된 대화를 하나씩 화면에 그리기
     history.forEach(function (item) {
-      // 1. 사용자 질문 말풍선
+      // 1. 사용자 질문 말풍선 (시간 추가!)
       const userRow = document.createElement("div");
       userRow.className = "message-row message-row--user";
       userRow.innerHTML =
+        '<span class="message__time">' + item.time + "</span>" +  // ← 시간 추가! ⏰
         '<div class="message message--user">' + item.message + "</div>";
       chatMessages.appendChild(userRow);
 
@@ -192,3 +193,24 @@ function formatReply(text) {
     .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")                        // **글씨** → 굵게
     .replace(/\n/g, "<br>");                                       // 줄바꿈 → <br>
 }
+
+// 🆕 새 대화 버튼 찾기
+const newChatBtn = document.getElementById("newChatBtn");
+
+// 🆕 새 대화 시작 (화면만 비우기)
+newChatBtn.addEventListener("click", function () {
+  // 확인 창 띄우기
+  if (!confirm("새 대화를 시작할까요? (기존 기록은 저장돼요)")) {
+    return;  // 취소 누르면 아무것도 안 함
+  }
+
+  // 채팅창 비우고 → 인사말만 다시 넣기
+  chatMessages.innerHTML =
+    '<div class="message-row message-row--ai">' +
+      '<div class="message message--ai">' +
+        '안녕하세요! 주가에 대해 무엇이든 물어보세요. 📈<br>' +
+        '(NVDA, AAPL, TSLA, MSFT, GOOGL 지원)' +
+      '</div>' +
+    '</div>';
+
+  console.log("🆕 새 대화 시작!");});

@@ -195,3 +195,11 @@ body {
   border-left: 3px solid #6366f1;  /* 왼쪽 파란 막대! */
   margin-bottom: 8px;    /* 🎯 이 줄 추가! (제목-본문 간격) */
 }
+
+/* 메시지 시간 표시 */
+.message__time {
+  font-size: 11px;
+  color: #999;          /* 연한 회색 */
+  margin: 0 6px;
+  align-self: flex-end; /* 말풍선 아래쪽에 정렬 */
+}
