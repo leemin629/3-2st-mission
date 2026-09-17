@@ -17,52 +17,44 @@ function applyColor(element, value, baseline) {
 // 페이지가 열리면 NVDA 주가를 한 번 받아온다
 async function loadStock() {
   try {
-    const response = await fetch("http://127.0.0.1:8000/stock/NVDA");
+    // ✅ 우리가 만든 summary API 사용!
+    const response = await fetch("http://127.0.0.1:8000/api/data/summary");
     const data = await response.json();
-    stockData = data["Global Quote"];
+    console.log("요약 데이터 받음:", data);
 
-    console.log("주가 데이터 받음:", stockData);
+    const avg = data.average_price;  // 평균가 (기준선)
 
-    const prevClose = Number(stockData["08. previous close"]);
+    // ── 평균가 (기본, 색상 없음) ──
+    document.querySelector(".summary .card:first-child .card__value")
+      .textContent = "$" + data.average_price.toFixed(2);
 
     // ── 현재가 ──
     const priceEl = document.getElementById("currentPrice");
-    const currentPrice = Number(stockData["05. price"]);
-    priceEl.textContent = "$" + currentPrice.toFixed(2);
-    applyColor(priceEl, currentPrice, prevClose);
+    priceEl.textContent = "$" + data.current_price.toFixed(2);
+    applyColor(priceEl, data.current_price, avg);
 
-    // ── 등락률 ──
-    const changeEl = document.getElementById("changePercent");
-    const numberPercent = parseFloat(stockData["10. change percent"]);
-    if (numberPercent > 0) {
-      changeEl.textContent = "+" + numberPercent.toFixed(2) + "% ▲";
-      changeEl.style.color = "#e53935";
-    } else if (numberPercent < 0) {
-      changeEl.textContent = numberPercent.toFixed(2) + "% ▼";
-      changeEl.style.color = "#1e88e5";
-    } else {
-      changeEl.textContent = numberPercent.toFixed(2) + "%";
-      changeEl.style.color = "#757575";
-    }
-
-        // ── 최고가 ──
+    // ── 최고가 ──
     const highEl = document.getElementById("highPrice");
-    const highPrice = Number(stockData["03. high"]);
-    if (isNaN(highPrice)) {
-      highEl.textContent = "—";                    // ✅ 데이터 없으면 대시!
-    } else {
-      highEl.textContent = "$" + highPrice.toFixed(2);
-      applyColor(highEl, highPrice, prevClose);
-    }
+    highEl.textContent = "$" + data.high_price.toFixed(2);
+    applyColor(highEl, data.high_price, avg);
 
     // ── 최저가 ──
     const lowEl = document.getElementById("lowPrice");
-    const lowPrice = Number(stockData["04. low"]);
-    if (isNaN(lowPrice)) {
-      lowEl.textContent = "—";                     // ✅ 데이터 없으면 대시!
+    lowEl.textContent = "$" + data.low_price.toFixed(2);
+    applyColor(lowEl, data.low_price, avg);
+
+    // ── 등락률 ──
+    const changeEl = document.getElementById("changePercent");
+    const pct = data.change_percent;
+    if (pct > 0) {
+      changeEl.textContent = "+" + pct.toFixed(2) + "% ▲";
+      changeEl.style.color = "#e53935";
+    } else if (pct < 0) {
+      changeEl.textContent = pct.toFixed(2) + "% ▼";
+      changeEl.style.color = "#1e88e5";
     } else {
-      lowEl.textContent = "$" + lowPrice.toFixed(2);
-      applyColor(lowEl, lowPrice, prevClose);
+      changeEl.textContent = pct.toFixed(2) + "%";
+      changeEl.style.color = "#757575";
     }
 
   } catch (error) {
@@ -109,6 +101,8 @@ async function sendMessage() {
   loadingRow.innerHTML =
         '<div class="message message--ai">' + formatReply(reply) + "</div>" +
     '<span class="message__time">' + getCurrentTime() + "</span>";
+
+  scrollToBottom();  // ✅ 이 한 줄 추가! 답변 완성 후 맨 아래로  
 }
 
 // Enter 키로 전송
