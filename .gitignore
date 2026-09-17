@@ -4,13 +4,13 @@ __pycache__/
 venv/
 .venv/
 
-# 환경변수
+# 환경변수 (비밀키)
 .env
 
-# Firebase 키
-*firebase*.json
-serviceAccountKey.json
+# Firebase 인증키
+*firebase-adminsdk*.json
+backend/nvda-catch-up-firebase-adminsdk-fbsvc-*.json
 
-# IDE
-.vscode/
-.idea/
+
+# 백업 폴더 (선택)
+_backup/

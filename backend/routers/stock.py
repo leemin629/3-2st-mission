@@ -8,7 +8,7 @@ from datetime import datetime
 router = APIRouter()
 
 
-@router.get("/stock/{symbol}")
+@router.get("/{symbol}")
 def read_stock(symbol: str):   # ✅ 라우터 함수 이름 변경 (겹침 방지!)
     # 1. 실제 API 호출 시도
     data = fetch_stock(symbol)
