@@ -3,21 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Insight AI</title>
+    <title>Stock Insight AI</title>
   <link rel="stylesheet" href="style.css">
+  <!-- 📊 Chart.js 라이브러리 추가! -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
   <!-- 헤더 섹션 -->
   <!-- 헤더 섹션 -->
-<header class="header">
-  <span class="header__icon">📈</span>
-
+<div class="header">
+  <div class="header__icon">📈</div>   <!-- 왼쪽: 오름! -->
   <div class="header__text">
     <h1 class="header__title">Stock Insight AI</h1>
     <p class="header__subtitle">미국 핵심 5주 분석 챗봇</p>
   </div>
-</header>
+  <div class="header__icon">📉</div>   <!-- 오른쪽: 내림! 추가! -->
+</div>
 
   <!-- Summary 섹션 -->
   <section class="summary">
@@ -45,14 +47,41 @@
     </div>
   </section>
 
-<section class="chat">
+<!-- 종목 선택 버튼 영역 -->
+<div class="stock-buttons">
+    <button class="active" onclick="selectStock('NVDA')">엔비디아<br>NVDA</button>
+    <button onclick="selectStock('AAPL')">애플<br><small>AAPL</small></button>
+    <button onclick="selectStock('TSLA')">테슬라<br><small>TSLA</small></button>
+    <button onclick="selectStock('MSFT')">마이크로소프트<br><small>MSFT</small></button>
+    <button onclick="selectStock('GOOGL')">구글<br><small>GOOGL</small></button>
+</div>
+
+<!-- 📊 차트 영역 (새로 추가!) -->
+<section class="chart-section">
+    <h2 class="chart-title">📊 주가 차트</h2>
+    <canvas id="priceChart"></canvas>
+</section>
+
+<!-- 🎯 버튼 2개 좌우 배치! -->
+<div class="action-buttons">
+  <!-- 왼쪽: 데이터 관리 -->
+  <button id="dataToggleBtn" class="data-toggle-btn">🗂️ 데이터 관리 열기</button>
+  <!-- 오른쪽: 채팅 -->
+  <button id="chatToggleBtn" class="chat-toggle-btn">💬 채팅을 원하면 누르세요</button>
+</div>
+
+
+<!-- 💬 채팅 (id 추가 + hidden으로 시작!) -->
+<section class="chat chat--hidden" id="chatBox">
   <div class="chat__header">
-    <h2 class="chat__title">AI Chat</h2>
+  <h2 class="chat__title">AI Chat</h2>
+  <div class="chat__header-btns">
     <button class="chat__new-btn" id="newChatBtn">🆕 새 대화</button>
+    <button class="chat__close" id="chatCloseBtn">✕ 창닫기</button>
   </div>
+</div>
 
   <div class="chat__messages" id="chatMessages">
-    <!-- 인사말만 남기고 예시 대화 삭제! -->
     <div class="message-row message-row--ai">
       <div class="message message--ai">
         안녕하세요! 주가에 대해 무엇이든 물어보세요. 📈
@@ -61,17 +90,47 @@
     </div>
   </div>
 
-   
-    <div class="chat__input">
-      <input
-        type="text"
-        class="chat__input-field"
-        id="messageInput"
-        placeholder="메시지를 입력하세요..."
-      />
-      <button class="chat__input-btn" id="sendBtn">전송</button>
-    </div>
-  </section>
+  <div class="chat__input">
+    <input
+      type="text"
+      class="chat__input-field"
+      id="messageInput"
+      placeholder="메시지를 입력하세요..."
+    />
+    <button class="chat__input-btn" id="sendBtn">전송</button>
+  </div>
+</section>
+
+<!-- 🗂️ 데이터 관리 (팝업, 처음엔 숨김!) -->
+<section class="data-manage data-manage--hidden" id="dataBox">
+  <div class="data-manage__header">
+    <h2>🗂️ 데이터 관리</h2>
+    <button class="data-manage__close" id="dataCloseBtn">✕ 창닫기</button>
+  </div>
+
+  <!-- 데이터 추가 폼 -->
+  <div class="data-form">
+    <input type="text" id="dataSymbol" placeholder="종목 (예: NVDA)">
+    <input type="date" id="dataDate">
+    <input type="number" id="dataValue" placeholder="가격" step="0.01">
+    <input type="text" id="dataMemo" placeholder="메모(선택)">
+    <button onclick="addData()" class="data-add-btn">➕ 추가</button>
+  </div>
+
+  <!-- 데이터 목록 (스크롤 영역!) -->
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>종목</th><th>날짜</th><th>가격</th><th>메모</th><th>삭제</th>
+        </tr>
+      </thead>
+      <tbody id="dataTableBody">
+        <tr><td colspan="5">불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
   <script src="app.js"></script>
 </body>

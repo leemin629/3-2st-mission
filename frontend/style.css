@@ -35,13 +35,13 @@ body {
 }
 
 .header__title {
-  font-size: 48px;
+  font-size: 72px;
   font-weight: 700;
   margin: 0;                  /* 🎯 기본 여백 제거 (균형!) */
 }
 
 .header__subtitle {
-  font-size: 24px;
+  font-size: 33px;
   font-weight: 500;
   margin: 0;                  /* 🎯 기본 여백 제거 (균형!) */
 }
@@ -59,19 +59,19 @@ body {
   flex: 1;
   background-color: #ffffff;
   border-radius: 12px;
-  padding: 20px;
+  padding: 32px;
   text-align: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .card__label {
-  font-size: 14px;
+  font-size: 16px;
   color: #888;
   margin-bottom: 8px;
 }
 
 .card__value {
-  font-size: 22px;
+  font-size: 32px;
   font-weight: bold;
 }
 
@@ -202,4 +202,310 @@ body {
   color: #999;          /* 연한 회색 */
   margin: 0 6px;
   align-self: flex-end; /* 말풍선 아래쪽에 정렬 */
+}
+
+/* 버튼들을 담는 상자 */
+.stock-buttons {
+    display: flex;           /* 버튼들을 가로로 나란히 */
+    gap: 10px;               /* 버튼 사이 간격 */
+    margin: 20px 0;          /* 위아래 여백 */
+    justify-content: center; /* 가운데 정렬 */
+}
+
+/* 버튼 하나하나 */
+.stock-buttons button {
+    padding: 20px 40px;      /* 버튼 안쪽 여백 (크기 키움) */
+    font-size: 1.4rem;         /* 글자 크기 */
+    width: 180px;              /* 모든 버튼 같은 너비! */
+    font-weight: bold;       /* 글자 굵게 */
+    border: 2px solid #ddd;  /* 테두리 */
+    border-radius: 16px;     /* 모서리 둥글게 */
+    background: white;       /* 배경 흰색 */
+    cursor: pointer;         /* 마우스 올리면 손가락 모양 */
+    transition: 0.2s;        /* 부드러운 효과 */
+}
+
+/* 마우스 올렸을 때 */
+.stock-buttons button:hover {
+    border-color: #4a7dff;   /* 테두리 파랑 */
+    color: #4a7dff;          /* 글자 파랑 */
+}
+
+/* 선택된 버튼 (계속 파랑!) */
+.stock-buttons button.active {
+    background: #4a7dff;
+    color: white;
+    border-color: #4a7dff;
+}
+
+/* 📊 차트 영역 */
+.chart-section {
+  max-width: 1000px;      /* 가로 최대 너비 */
+  margin: 20px auto;      /* 가운데 정렬 */
+  padding: 20px;
+  background: white;      /* 흰 배경 */
+  border-radius: 16px;    /* 모서리 둥글게 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);  /* 그림자 */
+}
+
+/* 📊 차트 제목 */
+.chart-title {
+  margin-bottom: 16px;
+  font-size: 26px;        /* ← 글자 크게! (20 → 26) */
+  text-align: center;     /* ← 가운데 정렬! */
+}
+
+/* 📊 차트 도화지 높이 고정! (핵심!) */
+.chart-section canvas {
+  max-height: 400px;      /* ← 이게 핵심! 높이 제한! */
+}
+
+/* 채팅 열기 버튼 (항상 보이게!) */
+.chat-toggle-wrap {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.chat-toggle-btn {
+  padding: 12px 24px;
+  background: #4f7cff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.chat-toggle-btn:hover {
+  background: #3b56d4;
+  transform: translateY(-2px);
+}
+
+/* 💬 팝업 채팅! (크게 + 드래그 가능!) */
+.chat {
+  position: fixed;
+  top: 350px;                    /* ← 종목 카드 바로 아래 */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1300px;                 /* ← 더 넓게! (양옆 여백까지) */
+  max-width: 92vw;
+  height: 780px;                 /* ← 더 길게! (노란색만큼) */
+  max-height: 82vh;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  padding: 24px;
+  z-index: 1000;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 💬 헤더 (드래그 손잡이!) */
+.chat__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #eee;
+  cursor: move;                  /* ← 마우스 이동 표시! */
+  user-select: none;             /* 드래그 시 글자선택 방지 */
+}
+
+/* 💬 메시지 영역 (남은 공간 다!) */
+.chat .chat__messages {
+  flex: 1;
+  height: auto;
+  overflow-y: auto;
+}
+
+/* ❌ 창닫기 버튼 (헤더 안!) */
+.chat__close {
+  padding: 8px 16px;
+  font-size: 15px;
+  font-weight: bold;
+  color: white;
+  background: #ff5c5c;                      /* 빨간색 */
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chat__close:hover {
+  background: #e04444;
+}
+
+/* 💬 메시지 영역 (남은 공간 다 차지!) */
+.chat .chat__messages {
+  flex: 1;                                  /* ← 남는 공간 꽉! */
+  height: auto;                             /* 고정 높이 제거 */
+  overflow-y: auto;
+}
+
+/* 💬 숨김! */
+.chat--hidden {
+  display: none;
+}
+
+/* 💬 헤더 버튼들 (새 대화 + 닫기 나란히) */
+.chat__header-btns {
+  display: flex;
+  gap: 8px;              /* 버튼 사이 간격 */
+}
+
+/* 💬 채팅 열렸을 때 → 아래 토글 버튼 숨김! */
+.chat-toggle-wrap {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* 채팅 열기 버튼 (항상 보이게!) */
+.chat-toggle-wrap {
+  text-align: center;                    /* 버튼 가운데 정렬 */
+  margin: 20px 0;
+}
+
+.chat-toggle-btn {
+  padding: 12px 24px;
+  background: #4f7cff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+
+/* 채팅창 강제로 보이게! (테스트용) */
+#chatBox.chat--hidden {
+  display: none !important;
+}
+
+/* ===== 🗂️ 데이터 관리 팝업 ===== */
+
+/* 열기 버튼 (채팅 버튼이랑 비슷하게!) */
+.data-toggle-btn {
+  padding: 12px 24px;
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.data-toggle-btn:hover {
+  background: #45a049;
+}
+
+/* 팝업 본체 - 화면 중앙 고정! */
+.data-manage {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);   /* 정중앙! */
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;                    /* 화면 높이의 80%까지만! */
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  z-index: 1000;                       /* 맨 위에! */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 숨김 상태 */
+.data-manage--hidden {
+  display: none;
+}
+
+/* 헤더 */
+.data-manage__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #4CAF50;
+  color: #fff;
+}
+.data-manage__header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.data-manage__close {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 추가 폼 */
+.data-form {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #eee;
+}
+.data-form input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+.data-form input#dataSymbol,
+.data-form input#dataMemo { flex: 1; }
+.data-add-btn {
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 📜 테이블 영역 - 여기만 스크롤! (핵심!) */
+.data-table-wrap {
+  overflow-y: auto;      /* 세로 스크롤! */
+  flex: 1;               /* 남은 공간 다 차지 */
+  padding: 0 20px 20px;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th {
+  position: sticky;      /* 스크롤해도 헤더 고정! 👍 */
+  top: 0;
+  background: #f5f5f5;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+.data-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+/* 🎯 차트(.chart-section)와 완벽하게 폭 맞추기! */
+.action-buttons {
+  display: flex;
+  justify-content: space-between;  /* 양끝 배치 */
+
+  /* ⭐ 차트와 똑같이! */
+  max-width: 1000px;    /* ← 차트 max-width와 동일! */
+  margin: 20px auto;    /* ← 차트 margin과 동일! (가운데 정렬) */
+  padding: 0 20px;      /* ← 차트 padding 좌우값과 동일! (핵심!) */
+  box-sizing: border-box;  /* ← 패딩 포함해서 1000px 계산 */
+}
+
+/* 헤더에 마우스 올리면 "잡을 수 있어요" 표시 */
+.data-manage__header {
+  cursor: grab;      /* 손 모양! */
+  user-select: none; /* 드래그 시 텍스트 선택 방지 */
 }
