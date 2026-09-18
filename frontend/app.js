@@ -18,7 +18,7 @@ function applyColor(element, value, baseline) {
 // 페이지가 열리면 NVDA 주가를 한 번 받아온다
 async function loadStock(symbol = "NVDA") {   // ← 종목 받기 (기본값 NVDA)
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/data/summary?symbol=" + symbol);  // ← URL에 종목 붙이기!
+    const response = await fetch("/api/data/summary?symbol=" + symbol);  // ← URL에 종목 붙이기!
     const data = await response.json();
     console.log("요약 데이터 받음:", data);
 
@@ -66,7 +66,7 @@ async function loadStock(symbol = "NVDA") {   // ← 종목 받기 (기본값 NV
 async function loadChart(symbol = "NVDA") {
   try {
     // 1. 차트 데이터 받아오기 (history API!)
-    const response = await fetch("http://127.0.0.1:8000/api/data/history?symbol=" + symbol);
+    const response = await fetch("/api/data/history?symbol=" + symbol);
     const data = await response.json();
     console.log("차트 데이터 받음:", data);
 
@@ -185,7 +185,7 @@ function scrollToBottom() {
 // 🤖 서버(/chat)에 물어보고 Gemini 답변 받기
 async function getAiReply(text) {
   try {
-    const response = await fetch("http://127.0.0.1:8000/chat", {
+    const response = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -215,7 +215,7 @@ function getCurrentTime() {
 // 📜 채팅 기록 불러오기
 async function loadHistory() {
   try {
-    const response = await fetch("http://127.0.0.1:8000/chat/history");
+    const response = await fetch("/chat/history");
     const data = await response.json();
     const history = data.history;
 
@@ -401,7 +401,7 @@ dataCloseBtn.addEventListener("click", () => {
 
 // ===== 🗂️ 데이터 관리 (CRUD) =====
 
-const API_BASE = "http://127.0.0.1:8000";  // 배포 시 이 주소만 바꾸면 됨!
+const API_BASE = "";  // 빈 값 = 현재 서버 자동 사용!
 
 // 1️⃣ 목록 불러오기 (GET)
 async function loadDataList() {
