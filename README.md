@@ -184,6 +184,26 @@ FIREBASE_CREDENTIALS=your_firebase_credentials
 
 ---
 
+## 🎁 보너스 기능
+
+과제의 선택(보너스) 항목도 함께 구현했습니다.
+
+| 기능 | 설명 |
+|------|------|
+| 📈 **데이터 시각화** | Chart.js 라인 차트로 주가 흐름 표시 |
+| 🌙 **다크 모드** | 라이트/다크 토글 + `localStorage` 저장 (새로고침해도 유지) |
+| 📊 **추가 지표** | 요약에 등락률(change_percent)·트렌드 제공 |
+| 🖱️ **팝업 드래그** | 채팅/데이터/대화 창을 자유롭게 이동 |
+| ✏️ **인라인 편집** | 메모 더블클릭 → 즉시 수정 |
+
+### 🌙 다크 모드 동작 방식
+```
+1. 🌙 버튼 클릭 → body에 'dark' 클래스 토글
+2. localStorage에 설정 저장
+3. 다음 방문 시 저장된 모드 자동 적용
+4. 차트 축 글자색도 모드에 맞춰 자동 변경
+```
+
 ## 📸 스크린샷
 
 ### 1. 데이터 요약 + AI 채팅
@@ -199,4 +219,4 @@ FIREBASE_CREDENTIALS=your_firebase_credentials
 
 ## 👤 만든 사람
 
-[leemin629 / [GitHub 링크](https://github.com/leemin629/3-2st-mission)]
+[leemin629 / [https://github.com/leemin629/3-2st-mission]
