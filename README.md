@@ -101,18 +101,45 @@ FIREBASE_CREDENTIALS=your_firebase_credentials
 ## 📁 프로젝트 구조
 
 ```
-├── main.py                 # FastAPI 앱 진입점 + CORS 설정
-├── firebase_config.py      # Firestore 연동
-├── routers/
-│   ├── data.py             # 데이터 CRUD + summary + history
-│   ├── stock.py            # AI 채팅 (/chat)
-│   └── conversations.py    # 대화 기록 CRUD
-├── static/
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-├── requirements.txt
-└── .env                    # (git 제외)
+3-2st-mission/
+├── _backup/                    # 백업 파일 보관
+│   ├── app_backup.py
+│   └── server_backup.py
+│
+├── backend/                    # 백엔드 (FastAPI)
+│   ├── routers/                # API 라우터
+│   │   ├── __init__.py
+│   │   ├── conversations.py    # 대화 기록 CRUD
+│   │   ├── data.py             # 주가 데이터 CRUD
+│   │   └── stock.py            # 주가 요약/차트 API
+│   │
+│   ├── services/               # 비즈니스 로직
+│   │   ├── __init__.py
+│   │   └── stock_service.py    # 주가 데이터 처리
+│   │
+│   ├── app.py                  # FastAPI 앱 (라우터 등록)
+│   ├── main.py                 # 서버 진입점
+│   ├── server.py               # 서버 실행 스크립트
+│   ├── firebase_config.py      # Firebase 연결 설정
+│   ├── seed_data.py            # 초기 데이터 삽입
+│   ├── delete_all.py           # 데이터 전체 삭제 유틸
+│   ├── test_stock.py           # 주가 API 테스트
+│   ├── index.html              # (백엔드용 정적 파일)
+│   ├── MODEL_LIST              # 사용 가능한 Gemini 모델 목록
+│   ├── requirements.txt        # Python 패키지 목록
+│   └── nvda-catch-up-firebase-adminsdk.json  # Firebase 인증키 (비공개)
+│
+├── frontend/                   # 프론트엔드
+│   ├── index.html              # 메인 화면
+│   ├── app.js                  # 전체 로직 (차트·채팅·CRUD)
+│   └── style.css               # 스타일
+│
+├── venv/                       # 가상환경 (Git 제외)
+├── .env                        # 환경변수 (API 키 등, 비공개)
+├── .gitignore
+├── PRD.md                      # 제품 요구사항 문서
+└── README.md                   # 프로젝트 설명 (현재 문서)
+
 ```
 
 ---
