@@ -79,6 +79,11 @@ async function loadChart(symbol = "NVDA") {
     }
 
     // 4. 새 차트 그리기!
+       // 4. 새 차트 그리기!
+    // 🎨 현재 모드에 맞는 축 색 결정!
+    const isDark = document.body.classList.contains("dark");
+    const axisColor = isDark ? "#ddd" : "#333";
+
     priceChart = new Chart(ctx, {
       type: "line",              // 선 그래프
       data: {
@@ -93,10 +98,20 @@ async function loadChart(symbol = "NVDA") {
           pointRadius: 0         // 점 숨기기 (깔끔!)
         }]
       },
-      options: {
+            options: {
         responsive: true,
         plugins: {
-          legend: { display: false }   // ← true를 false로! (범례 숨기기!)
+          legend: { display: false }
+        },
+                scales: {
+          x: {
+            ticks: { color: axisColor },        // 🎨 모드에 따라 자동!
+            grid: { color: "rgba(128,128,128,0.15)" }
+          },
+          y: {
+            ticks: { color: axisColor },        // 🎨 모드에 따라 자동!
+            grid: { color: "rgba(128,128,128,0.15)" }
+          }
         }
       }
     });
@@ -503,7 +518,7 @@ function editMemo(cell, id, symbol, date, value) {
   const input = cell.querySelector("input");
   input.focus();  // 바로 입력 가능하게 커서 놓기
 
-  // 엔터 → 저장!
+    // 엔터 → 저장!
   input.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
       const newMemo = input.value.trim();
@@ -555,10 +570,11 @@ convToggleBtn.addEventListener("click", () => {
 // 닫기 버튼 클릭
 convCloseBtn.addEventListener("click", () => {
   convBox.classList.add("data-manage--hidden");
-  // 🎯 위치 초기화! (다음에 가운데서 뜨게)
+  // 🎯 위치 완전 초기화! (다음에 가운데서 뜨게)
   convBox.style.left = "";
   convBox.style.top = "";
   convBox.style.position = "";
+  convBox.style.transform = "";   // ← 이 줄만 추가됨!
 });
 
 // 📜 대화 목록 불러오기 (GET)
@@ -624,13 +640,22 @@ function makeDraggable(box, header) {
 
   header.style.cursor = "move";  // 마우스 모양 이동표시
 
-  header.addEventListener("mousedown", (e) => {
+    header.addEventListener("mousedown", (e) => {
+    // 🎯 닫기 버튼 누를 땐 드래그 안 함! (도망 방지!)
+    if (e.target.closest("button")) return;
+
     isDown = true;
     // 현재 위치 계산
     const rect = box.getBoundingClientRect();
+
+    // 🎯 위치 고정 (중앙정렬 해제!)
+    box.style.position = "fixed";
+    box.style.transform = "none";
+    box.style.left = rect.left + "px";
+    box.style.top = rect.top + "px";
+
     offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
-    box.style.position = "fixed";  // 자유 이동 가능하게
   });
 
   document.addEventListener("mousemove", (e) => {
@@ -647,3 +672,25 @@ makeDraggable(
   document.getElementById("convBox"),
   document.querySelector("#convBox .data-manage__header")  // ✅ 올바른 클래스!
 );
+
+// 🌙 다크 모드 토글 (개선판)
+const darkBtn = document.getElementById("darkBtn");
+
+function updateDarkBtn() {
+  const isDark = document.body.classList.contains("dark");
+  darkBtn.textContent = isDark ? "☀️ 라이트모드" : "🌙 다크모드";
+}
+
+if (darkBtn) {
+  darkBtn.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+    updateDarkBtn();
+    loadChart(currentSymbol);   // 🎨 차트 다시 그려서 축 색 갱신!
+  });
+
+  if (localStorage.getItem("darkMode") === "true") {
+    document.body.classList.add("dark");
+  }
+  updateDarkBtn();
+}

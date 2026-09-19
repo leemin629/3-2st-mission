@@ -553,3 +553,35 @@ body {
 .delete-btn:hover {
   background: #757575;   /* 진한 회색 */
 }
+
+/* 🌙 다크 모드 */
+body.dark {
+  background: #1a1a2e;
+  color: #eee;
+}
+body.dark .card,
+body.dark button {
+  background: #16213e;
+  color: #eee;
+}
+body.dark table td,
+body.dark table th {
+  background: #16213e !important;
+  color: #eee !important;
+  border-color: #444 !important;
+}
+
+/* 🌙 다크모드 - 하얀 배경 다 잡기 */
+body.dark div[class*="chart"],
+body.dark .card,
+body.dark section {
+  background: #16213e !important;
+  color: #eee !important;
+}
+
+/* 🌙 다크모드에서 채팅 버튼 밝게 */
+body.dark #chatBtn,
+body.dark button[class*="chat"] {
+  background: #4a9eff !important;
+  color: #fff !important;
+}
