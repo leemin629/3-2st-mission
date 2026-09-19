@@ -355,6 +355,10 @@ dataToggleBtn.addEventListener("click", () => {
 // 닫기 버튼 클릭
 dataCloseBtn.addEventListener("click", () => {
   dataBox.classList.add("data-manage--hidden");
+  // 🎯 위치 초기화!
+  dataBox.style.left = "";
+  dataBox.style.top = "";
+  dataBox.style.transform = "";  // ← 데이터 창은 transform도!
 });
 
 // ===== 🗂️ 데이터 관리 창 드래그 =====
@@ -414,7 +418,7 @@ async function loadDataList() {
     tbody.innerHTML = "";  // 기존 내용 비우기
 
     if (list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="padding:12px; text-align:center;">데이터가 없습니다</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">데이터가 없습니다</td></tr>`;
       return;
     }
 
@@ -425,10 +429,11 @@ async function loadDataList() {
         <td style="padding:8px; border:1px solid #ddd;">${item.symbol || "-"}</td>
         <td style="padding:8px; border:1px solid #ddd;">${item.date}</td>
         <td style="padding:8px; border:1px solid #ddd;">$${item.value}</td>
-        <td style="padding:8px; border:1px solid #ddd;">${item.memo || "-"}</td>
-        <td style="padding:8px; border:1px solid #ddd; text-align:center;">
-          <button onclick="deleteData('${item.id}')" style="background:#f44336; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer;">🗑️</button>
-        </td>
+        <td style="padding:8px; border:1px solid #ddd; cursor:pointer;"
+    ondblclick="editMemo(this, '${item.id}', '${item.symbol}', '${item.date}', ${item.value})">
+    ${item.memo && !item.memo.includes("Close") ? item.memo : "✏️ 더블클릭"}
+</td>
+        
       `;
       tbody.appendChild(row);
     });
@@ -483,5 +488,162 @@ async function deleteData(id) {
   }
 }
 
+// ✏️ 메모 인라인 편집
+function editMemo(cell, id, symbol, date, value) {
+  // 현재 메모 내용 가져오기 (안내문구면 빈칸으로)
+  const current = cell.textContent.trim();
+  const oldMemo = current === "✏️ 더블클릭" ? "" : current;
+
+  // 입력창(input)으로 변신!
+  cell.innerHTML = `
+    <input type="text" value="${oldMemo}"
+           style="width:90%; padding:4px; border:1px solid #4f7cff; border-radius:4px;">
+  `;
+
+  const input = cell.querySelector("input");
+  input.focus();  // 바로 입력 가능하게 커서 놓기
+
+  // 엔터 → 저장!
+  input.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+      const newMemo = input.value.trim();
+      await saveMemo(id, symbol, date, value, newMemo);
+    }
+  });
+
+  // 다른 곳 클릭(포커스 잃음) → 저장!
+  input.addEventListener("blur", async () => {
+    const newMemo = input.value.trim();
+    await saveMemo(id, symbol, date, value, newMemo);
+  });
+}
+
+// 💾 메모 저장 (PUT API 호출!)
+async function saveMemo(id, symbol, date, value, memo) {
+  try {
+    await fetch(`${API_BASE}/api/data/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      // 🎯 PUT은 전체 데이터 필요! (symbol, date, value, memo)
+      body: JSON.stringify({ symbol, date, value, memo })
+    });
+
+    loadDataList();  // 목록 새로고침 → 저장된 메모 표시!
+    console.log("✅ 메모 저장 완료:", memo);
+  } catch (err) {
+    console.error("메모 저장 실패:", err);
+    alert("메모 저장에 실패했어요 🥲");
+  }
+}
+
 // 페이지 열리면 바로 목록 불러오기!
 loadDataList();
+
+// ===== 📜 대화 기록 팝업 =====
+
+// 버튼/팝업 요소 찾기
+const convToggleBtn = document.getElementById("convToggleBtn");
+const convBox = document.getElementById("convBox");
+const convCloseBtn = document.getElementById("convCloseBtn");
+
+// 열기 버튼 클릭
+convToggleBtn.addEventListener("click", () => {
+  convBox.classList.remove("data-manage--hidden");
+  loadConversations();  // 열 때 목록 불러오기!
+});
+
+// 닫기 버튼 클릭
+convCloseBtn.addEventListener("click", () => {
+  convBox.classList.add("data-manage--hidden");
+  // 🎯 위치 초기화! (다음에 가운데서 뜨게)
+  convBox.style.left = "";
+  convBox.style.top = "";
+  convBox.style.position = "";
+});
+
+// 📜 대화 목록 불러오기 (GET)
+async function loadConversations() {
+  try {
+    const res = await fetch(`${API_BASE}/api/conversations`);
+    const list = await res.json();
+
+    const tbody = document.getElementById("convTableBody");
+    tbody.innerHTML = "";  // 기존 내용 비우기
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">대화 기록이 없습니다</td></tr>`;
+      return;
+    }
+
+    // 각 대화를 한 줄씩 그리기
+    list.forEach(item => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td style="padding:8px; border:1px solid #ddd;">${item.message || "-"}</td>
+        <td style="padding:8px; border:1px solid #ddd;">${item.reply || "-"}</td>
+        <td style="padding:8px; border:1px solid #ddd;">${item.model || "-"}</td>
+        <td style="padding:8px; border:1px solid #ddd; font-size:12px;">${formatDate(item.created_at)}</td>
+        <td style="padding:8px; border:1px solid #ddd; text-align:center;">
+          <button onclick="deleteConversation('${item.id}')" style="background:#9e9e9e; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer;">🗑️</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    console.error("대화 목록 불러오기 실패:", err);
+  }
+}
+
+// 📜 대화 삭제 (DELETE)
+async function deleteConversation(id) {
+  if (!confirm("이 대화를 삭제할까요?")) return;
+
+  try {
+    await fetch(`${API_BASE}/api/conversations/${id}`, { method: "DELETE" });
+    loadConversations();  // 목록 새로고침!
+  } catch (err) {
+    console.error("대화 삭제 실패:", err);
+    alert("삭제에 실패했어요 🥲");
+  }
+}
+
+// 📅 날짜 예쁘게 (2026-09-19T06:00 → 09/19 06:00)
+function formatDate(isoString) {
+  if (!isoString) return "-";
+  const d = new Date(isoString);
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${month}/${day} ${hours}:${minutes}`;
+}
+
+// ===== 팝업 드래그 이동 기능 =====
+function makeDraggable(box, header) {
+  let isDown = false, offsetX = 0, offsetY = 0;
+
+  header.style.cursor = "move";  // 마우스 모양 이동표시
+
+  header.addEventListener("mousedown", (e) => {
+    isDown = true;
+    // 현재 위치 계산
+    const rect = box.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    box.style.position = "fixed";  // 자유 이동 가능하게
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    box.style.left = (e.clientX - offsetX) + "px";
+    box.style.top  = (e.clientY - offsetY) + "px";
+  });
+
+  document.addEventListener("mouseup", () => { isDown = false; });
+}
+
+// 대화 기록창에 드래그 적용
+makeDraggable(
+  document.getElementById("convBox"),
+  document.querySelector("#convBox .data-manage__header")  // ✅ 올바른 클래스!
+);

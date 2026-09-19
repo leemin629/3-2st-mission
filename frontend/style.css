@@ -388,7 +388,7 @@ body {
 /* 열기 버튼 (채팅 버튼이랑 비슷하게!) */
 .data-toggle-btn {
   padding: 12px 24px;
-  background: #4CAF50;
+  background: #e53935;;
   color: #fff;
   border: none;
   border-radius: 24px;
@@ -397,7 +397,7 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .data-toggle-btn:hover {
-  background: #45a049;
+  background: #e53935;
 }
 
 /* 팝업 본체 - 화면 중앙 고정! */
@@ -508,4 +508,48 @@ body {
 .data-manage__header {
   cursor: grab;      /* 손 모양! */
   user-select: none; /* 드래그 시 텍스트 선택 방지 */
+}
+
+/* ===== 🎨 버튼 삼색 테마 (주식: 빨강·초록·파랑) ===== */
+
+/* 🔴 데이터 관리 → 빨강 */
+#dataToggleBtn {
+  background: #e53935;
+}
+#dataToggleBtn:hover {
+  background: #c62828;
+}
+
+/* 🟢 대화 기록 → 초록 (그대로 유지, 명시만) */
+#convToggleBtn {
+  background: #4CAF50;
+}
+#convToggleBtn:hover {
+  background: #45a049;
+}
+
+/* 🔵 채팅 버튼 → 파랑 + 앞 버튼들과 똑같은 모양! */
+.chat-toggle-btn {
+  padding: 12px 24px;              /* 앞 버튼과 동일 */
+  background: #4f7cff;
+  color: #fff;
+  border: none;
+  border-radius: 24px;            /* ← 둥근 모양 통일! (8px→24px) */
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);  /* ← 그림자 통일! */
+}
+.chat-toggle-btn:hover {
+  background: #3b56d4;
+  transform: none;                /* 앞 버튼들처럼 위로 안 뜨게 */
+}
+
+/* 🔴 데이터 관리 팝업 헤더 → 빨강 (버튼과 통일) */
+#dataBox .data-manage__header {
+  background: #e53935;
+}
+
+/* 삭제 버튼 → 회색 톤 */
+.delete-btn:hover {
+  background: #757575;   /* 진한 회색 */
 }

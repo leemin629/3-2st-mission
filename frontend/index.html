@@ -66,6 +66,8 @@
 <div class="action-buttons">
   <!-- 왼쪽: 데이터 관리 -->
   <button id="dataToggleBtn" class="data-toggle-btn">🗂️ 데이터 관리 열기</button>
+  <!-- 👇 이 버튼 추가! -->
+  <button id="convToggleBtn" class="data-toggle-btn">📜 대화 기록 보기</button>
   <!-- 오른쪽: 채팅 -->
   <button id="chatToggleBtn" class="chat-toggle-btn">💬 채팅을 원하면 누르세요</button>
 </div>
@@ -108,15 +110,37 @@
     <button class="data-manage__close" id="dataCloseBtn">✕ 창닫기</button>
   </div>
 
-    <!-- 데이터 목록 (스크롤 영역!) -->
+  <!-- 데이터 목록 (스크롤 영역!) -->
   <div class="data-table-wrap">
     <table class="data-table">
       <thead>
         <tr>
-          <th>종목</th><th>날짜</th><th>가격</th><th>메모</th><th>삭제</th>
+          <th>종목</th><th>날짜</th><th>가격</th><th>메모</th>
         </tr>
       </thead>
       <tbody id="dataTableBody">
+        <tr><td colspan="4">불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 📜 대화 기록 (팝업, 처음엔 숨김!) -->
+<section class="data-manage data-manage--hidden" id="convBox">
+  <div class="data-manage__header">
+    <h2>📜 대화 기록</h2>
+    <button class="data-manage__close" id="convCloseBtn">✕ 창닫기</button>
+  </div>
+
+  <!-- 대화 목록 (스크롤 영역!) -->
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>질문</th><th>답변</th><th>모델</th><th>시간</th><th>삭제</th>
+        </tr>
+      </thead>
+      <tbody id="convTableBody">
         <tr><td colspan="5">불러오는 중...</td></tr>
       </tbody>
     </table>

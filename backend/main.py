@@ -8,7 +8,7 @@ import uvicorn
 from dotenv import load_dotenv
 from firebase_config import db
 from firebase_admin import firestore
-from routers import stock, data   # ← data 추가
+from routers import stock, data, conversations   # conversations 추가
 
 # 환경변수 로드
 load_dotenv()
@@ -30,7 +30,7 @@ app.add_middleware(
 )
 app.include_router(stock.router, prefix="/api/stocks", tags=["stocks"])
 app.include_router(data.router, prefix="/api/data", tags=["data"])   # ← 이 줄 추가!
-
+app.include_router(conversations.router, prefix="/api/conversations", tags=["conversations"])
 # 🤖 Gemini 설정
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -39,11 +39,13 @@ class ChatRequest(BaseModel):
     message: str
 
 # 사용할 모델 목록 (폴백용)
+# 백엔드 main.py 수정
 MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-flash-latest",
-    "gemini-flash-lite-latest",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.7-flash",
+    "gemini-3.1-pro-preview"
 ]
 
 # 📊 Firestore에서 요약 통계 계산
