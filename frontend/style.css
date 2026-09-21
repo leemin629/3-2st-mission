@@ -585,3 +585,7 @@ body.dark button[class*="chat"] {
   background: #4a9eff !important;
   color: #fff !important;
 }
+
+body {
+  zoom: 0.8;
+}
