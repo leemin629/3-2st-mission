@@ -126,8 +126,8 @@ FIREBASE_CREDENTIALS=your_firebase_credentials
 │   ├── test_stock.py           # 주가 API 테스트
 │   ├── index.html              # (백엔드용 정적 파일)
 │   ├── MODEL_LIST              # 사용 가능한 Gemini 모델 목록
-│   ├── requirements.txt        # Python 패키지 목록
-│   └── nvda-catch-up-firebase-adminsdk.json  # Firebase 인증키 (비공개)
+│   └── requirements.txt        # Python 패키지 목록
+│   
 │
 ├── frontend/                   # 프론트엔드
 │   ├── index.html              # 메인 화면
