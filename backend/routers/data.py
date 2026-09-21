@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from firebase_config import db
 from validation_utils import clean_text, validate_symbol, validate_price, validate_date
+from datetime import datetime, timedelta
+from typing import Optional
 
 router = APIRouter()
 
@@ -28,32 +30,74 @@ def sanitize_data_item(item: DataItem) -> dict:
 
 # ===== 데이터 요약 =====
 @router.get("/summary")
-async def get_summary(symbol: str = Query("NVDA")):
+async def get_summary(
+    symbol: str = Query("NVDA"),
+    period: Optional[int] = Query(
+        None,
+        ge=1,
+        le=3650,
+        description="최근 N일 기준으로 요약합니다. 예: 7, 30, 90"
+    )
+):
+    """
+    선택한 종목의 요약 정보를 반환합니다.
+
+    - period가 없으면 전체 데이터 기준으로 요약
+    - period가 있으면 가장 최근 날짜를 기준으로 최근 N일 데이터만 요약
+      예: /api/data/summary?symbol=NVDA&period=30
+    """
     symbol = validate_symbol(symbol)
 
     docs = db.collection("data") \
         .where("symbol", "==", symbol) \
         .stream()
 
-    prices = []
     records = []
 
     for doc in docs:
         d = doc.to_dict()
-        prices.append(d["value"])
         records.append({
             "date": d["date"],
             "value": d["value"]
         })
 
-    if not prices:
+    if not records:
         return {"error": f"{symbol} 데이터가 없습니다."}
+
+    # 날짜 오름차순 정렬
+    records.sort(key=lambda x: x["date"])
+
+    # period 파라미터가 있으면 최근 N일 데이터만 필터링
+    start_date = None
+    end_date = None
+
+    if period is not None:
+        latest_date = datetime.strptime(records[-1]["date"], "%Y-%m-%d").date()
+        start_date_obj = latest_date - timedelta(days=period - 1)
+
+        start_date = start_date_obj.isoformat()
+        end_date = latest_date.isoformat()
+
+        records = [
+            r for r in records
+            if start_date_obj <= datetime.strptime(r["date"], "%Y-%m-%d").date() <= latest_date
+        ]
+
+    if not records:
+        return {
+            "symbol": symbol,
+            "period": period,
+            "start_date": start_date,
+            "end_date": end_date,
+            "count": 0,
+            "message": "해당 기간에 데이터가 없습니다."
+        }
+
+    prices = [r["value"] for r in records]
 
     avg_price = sum(prices) / len(prices)
     high_price = max(prices)
     low_price = min(prices)
-
-    records.sort(key=lambda x: x["date"])
 
     oldest = records[0]["value"]
     latest = records[-1]["value"]
@@ -69,6 +113,10 @@ async def get_summary(symbol: str = Query("NVDA")):
 
     return {
         "symbol": symbol,
+        "period": period,
+        "summary 기준": "전체 데이터" if period is None else f"최근 {period}일",
+        "start_date": records[0]["date"],
+        "end_date": records[-1]["date"],
         "count": len(prices),
         "current_price": round(latest, 2),
         "average_price": round(avg_price, 2),
