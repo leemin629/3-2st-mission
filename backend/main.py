@@ -24,9 +24,11 @@ app = FastAPI(title="Stock Insight AI")
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["https://three-2st-mission.onrender.com"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+)
 )
 app.include_router(stock.router, prefix="/api/stocks", tags=["stocks"])
 app.include_router(data.router, prefix="/api/data", tags=["data"])   # ← 이 줄 추가!
