@@ -29,7 +29,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
-)
+
 app.include_router(stock.router, prefix="/api/stocks", tags=["stocks"])
 app.include_router(data.router, prefix="/api/data", tags=["data"])   # ← 이 줄 추가!
 app.include_router(conversations.router, prefix="/api/conversations", tags=["conversations"])
