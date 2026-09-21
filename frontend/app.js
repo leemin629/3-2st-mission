@@ -2,6 +2,28 @@
 let stockData = null;
 let priceChart = null;   // 📊 차트 저장용 (추가!)
 
+// HTML 특수문자를 안전한 문자로 변환
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// 입력값 길이 제한 및 앞뒤 공백 제거
+function cleanInput(value, maxLength, fieldName) {
+  const cleaned = String(value ?? "").trim();
+
+  if (cleaned.length > maxLength) {
+    alert(`${fieldName}은 최대 ${maxLength}자까지 입력할 수 있습니다.`);
+    return null;
+  }
+
+  return cleaned;
+}
+
 // 🎯 색상+화살표를 적용하는 함수
 function applyColor(element, value, baseline) {
   if (value > baseline) {
@@ -149,7 +171,8 @@ const chatMessages = document.getElementById("chatMessages");
 
 // 메시지를 화면에 추가하는 함수 (async로 변경!)
 async function sendMessage() {
-  const text = messageInput.value.trim();
+  const text = cleanInput(messageInput.value, 500, "메시지");
+  if (text === null) return;
   if (text === "") return;
 
   // 사용자 메시지
@@ -157,7 +180,7 @@ async function sendMessage() {
   userRow.className = "message-row message-row--user";
   userRow.innerHTML =
     '<span class="message__time">' + getCurrentTime() + "</span>" +
-    '<div class="message message--user">' + text + "</div>";
+    '<div class="message message--user">' + escapeHTML(text) + "</div>";
   chatMessages.appendChild(userRow);
   scrollToBottom();
 
@@ -265,10 +288,12 @@ loadHistory();
 
 // 📝 AI 답변 포맷팅 (마크다운 → HTML 변환)
 function formatReply(text) {
-  return text
-    .replace(/^## (.+)$/gm, '<span class="chat-title">$1</span>')  // ## 제목 → 큰 글씨
-    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")                        // **글씨** → 굵게
-    .replace(/\n/g, "<br>");                                       // 줄바꿈 → <br>
+  const safeText = escapeHTML(text);
+
+  return safeText
+    .replace(/^## (.+)$/gm, '<span class="chat-title">$1</span>')
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/\n/g, "<br>");
 }
 
 // 🆕 새 대화 버튼 찾기
@@ -294,7 +319,7 @@ newChatBtn.addEventListener("click", function () {
 
  // 💬 채팅 열기/닫기 토글!
 const chatToggleBtn = document.getElementById("chatToggleBtn");
-const chatToggleWrap = document.querySelector(".chat-toggle-wrap");  // 🎯 상자 추가!
+const chatToggleWrap = document.querySelector(".chat-toggle-wrap") || chatToggleBtn;  // 🎯 상자 추가!
 const chatBox = document.getElementById("chatBox");
 
 chatToggleBtn.addEventListener("click", function () {
