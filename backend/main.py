@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from fastapi import HTTPException
+from validation_utils import validate_symbol
+import logging
 import google.generativeai as genai
 import os
 import uvicorn
@@ -38,17 +41,23 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 # 📩 요청 데이터 형식 정의
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=500)
+    symbol: str = "NVDA"
 
 # 사용할 모델 목록 (폴백용)
 # 백엔드 main.py 수정
-MODELS = [
-    "gemini-3.6-flash",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-    "gemini-3.1-pro-preview"
-]
+# 환경변수에 모델을 지정하거나 계정에서 실제 사용 가능한 모델을 조회합니다.
+def available_models():
+    configured = os.getenv("GEMINI_MODELS", "")
+    if configured.strip():
+        return [name.strip() for name in configured.split(",") if name.strip()]
+    candidates = [m.name for m in genai.list_models()
+                  if "generateContent" in m.supported_generation_methods
+                  and any(kind in m.name for kind in ("flash", "pro"))
+                  and not any(kind in m.name for kind in ("image", "audio", "tts", "live"))]
+    candidates.sort(key=lambda name: ("flash" not in name, "lite" not in name, name))
+    return candidates[:3]
+
 
 # 📊 Firestore에서 요약 통계 계산
 def get_stock_summary(symbol="NVDA"):
@@ -66,10 +75,13 @@ def get_stock_summary(symbol="NVDA"):
 
     oldest = records[0]["value"]
     latest = records[-1]["value"]
-    change_percent = (latest - oldest) / oldest * 100
+    change_percent = (latest - oldest) / oldest * 100 if oldest else 0
     trend = "상승" if change_percent > 0 else "하락" if change_percent < 0 else "보합"
 
     return {
+        "start_date": records[0]["date"],
+        "end_date": records[-1]["date"],
+        "count": len(records),
         "current": round(latest, 2),
         "average": round(sum(prices) / len(prices), 2),
         "high": round(max(prices), 2),
@@ -80,7 +92,11 @@ def get_stock_summary(symbol="NVDA"):
 
 # 💬 채팅 엔드포인트
 @app.post("/chat")
-async def chat(req: ChatRequest):
+def chat(req: ChatRequest):
+    req.message = req.message.strip()
+    if not req.message:
+        raise HTTPException(400, "메시지를 입력해 주세요.")
+    req.symbol = validate_symbol(req.symbol)
     # 🔍 종목별 별명 사전 (한글/영문 다 인식!)
     SYMBOL_MAP = {
         "NVDA":  ["NVDA", "엔비디아", "NVIDIA"],
@@ -97,14 +113,15 @@ async def chat(req: ChatRequest):
             selected = symbol
             break
 
-    # 종목 있을 때만 데이터 가져오기!
-    summary = get_stock_summary(selected) if selected else None
+    # 질문에 종목이 없으면 화면에서 선택한 종목을 사용합니다.
+    selected = selected or req.symbol
+    summary = get_stock_summary(selected)
 
     if selected and summary:
         # ✅ 특정 종목 → 데이터 기반 답변
         data_context = f"""
-[{selected} 최근 100일 실제 데이터]
-- 현재가: ${summary['current']}
+[{selected} 저장 데이터 {summary['start_date']} ~ {summary['end_date']} ({summary['count']}개)]
+- 마지막 저장 가격: ${summary['current']}
 - 평균가: ${summary['average']}
 - 최고가: ${summary['high']}
 - 최저가: ${summary['low']}
@@ -117,7 +134,7 @@ async def chat(req: ChatRequest):
 2. 데이터에 없는 내용은 일반 지식으로 보충한다.
 3. 핵심만 간결하게 답변한다.
 4. 내용이 여러 개면 '## 제목'으로 주제를 나눈다.
-5. 강조는 <b>강조</b> HTML 태그를 사용한다.
+5. 강조는 **강조** 마크다운을 사용한다. 저장 가격을 실시간 시세로 표현하지 않는다.
 6. 각 주제는 최대 3줄 이내로 요약한다.
 7. 불필요한 서론과 면책조항은 쓰지 않는다.
 8. 항상 정중하고 공손한 존댓말('~습니다', '~됩니다')로 답변한다.
@@ -128,12 +145,12 @@ async def chat(req: ChatRequest):
 
     else:
         # 🧠 시장 전반 질문 → 애널리스트 모드!
-        system_prompt = """너는 미국 주식시장 전문 애널리스트야. 아래 규칙을 반드시 지켜:
+        system_prompt = f"선택 종목 {selected}의 저장 데이터가 없습니다. 구체적 가격을 추측하지 마세요.\n" + """너는 미국 주식시장 전문 애널리스트야. 아래 규칙을 반드시 지켜:
 
 1. 미국 주식시장, 산업, 경제 전반에 대해 전문가답게 답변한다.
 2. 핵심만 간결하게 답변한다.
 3. 내용이 여러 개면 '## 제목'으로 주제를 나눈다.
-4. 강조는 <b>강조</b> HTML 태그를 사용한다.
+4. 강조는 **강조** 마크다운을 사용한다. 저장 가격을 실시간 시세로 표현하지 않는다.
 5. 각 주제는 최대 3줄 이내로 요약한다.
 6. 특정 종목 상세 데이터가 필요하면 "NVDA, AAPL, TSLA, MSFT, GOOGL 중 하나를 물어보세요"라고 안내한다.
 7. 불필요한 서론과 면책조항은 쓰지 않는다.
@@ -141,49 +158,43 @@ async def chat(req: ChatRequest):
 
 사용자 질문: """
 
-    for model_name in MODELS:
+    try:
+        models = available_models()
+    except Exception:
+        raise HTTPException(503, "AI 모델 목록을 확인하지 못했습니다. API 키 또는 GEMINI_MODELS 설정을 확인해 주세요.")
+
+    for model_name in models:
         try:
             model = genai.GenerativeModel(model_name)
             full_prompt = system_prompt + req.message
-            response = model.generate_content(full_prompt)
+            response = model.generate_content(full_prompt, request_options={"timeout": 30})
             reply = response.text
 
-            db.collection("chat_history").add({
-                "message": req.message,
-                "reply": reply,
-                "model": model_name,
-                "created_at": firestore.SERVER_TIMESTAMP
-            })
+            try:
+                db.collection("chat_history").add({
+                    "message": req.message, "reply": reply, "model": model_name,
+                    "symbol": selected, "created_at": firestore.SERVER_TIMESTAMP
+                })
+                saved = True
+            except Exception:
+                logging.exception("대화 저장 실패")
+                saved = False
 
-            return {"reply": reply, "model": model_name, "symbol": selected}
+            return {"reply": reply, "model": model_name, "symbol": selected, "saved": saved}
         except Exception as e:
             print(f"{model_name} 실패: {e}")
             continue
-    return {"reply": "모든 모델이 응답하지 못했어요 🥲", "model": "none"}
+    raise HTTPException(503, "AI가 응답하지 못했습니다. API 키, 모델 설정 또는 호출 한도를 확인해 주세요.")
 
 # 📜 채팅 기록 불러오기 엔드포인트
 @app.get("/chat/history")
 async def get_chat_history():
-    docs = db.collection("chat_history").order_by("created_at").stream()
-
-    history = []
-    for doc in docs:
-        data = doc.to_dict()
-
-        # 🕐 시간을 "14:05" 형태로 변환
-        created = data.get("created_at")
-        time_str = ""
-        if created:
-            time_str = created.strftime("%H:%M")  # 시:분만 뽑기
-
-        history.append({
-            "message": data.get("message"),
-            "reply": data.get("reply"),
-            "model": data.get("model"),
-            "time": time_str,  # ← 시간 추가! ⏰
-        })
-
-    return {"history": history}
+    records = conversations.read_records()
+    records.reverse()
+    for record in records:
+        created = record.get("created_at")
+        record["time"] = created.astimezone().strftime("%H:%M") if created else ""
+    return {"history": records}
 
 # 🎯 프론트엔드 연결 (반드시 맨 아래!)
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

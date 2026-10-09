@@ -1,30 +1,27 @@
-# services/stock_service.py
-import requests
 import os
+import requests
+from fastapi import HTTPException
 from dotenv import load_dotenv
 
 load_dotenv()
-API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
 
-def fetch_stock(symbol: str):
-    """Alpha Vantage에서 주가 데이터를 가져온다"""
-    url = "https://www.alphavantage.co/query"
-    params = {
-        "function": "GLOBAL_QUOTE",
-        "symbol": symbol,
-        "apikey": API_KEY
-    }
-    response = requests.get(url, params=params)
-    return response.json()
+def fetch_market(symbol, function):
+    key = os.getenv("ALPHA_VANTAGE_API_KEY")
+    if not key:
+        raise HTTPException(503, "ALPHA_VANTAGE_API_KEY 설정이 필요합니다.")
+    try:
+        response = requests.get("https://www.alphavantage.co/query", params={
+            "function": function, "symbol": symbol, "apikey": key,
+        }, timeout=20)
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError):
+        raise HTTPException(502, "주가 제공 서버에 연결하지 못했습니다.")
+    if "Information" in data or "Note" in data:
+        raise HTTPException(429, "주가 API 호출 한도 또는 이용 권한을 확인해 주세요. 기존 데이터는 유지됩니다.")
+    if "Error Message" in data:
+        raise HTTPException(502, "주가 제공 서버가 요청을 처리하지 못했습니다.")
+    return data
 
-# ⬇️ 여기에 더미 함수 추가!
-def get_stock_data(symbol: str):
-    """더미 데이터 (지금 사용)"""
-    return {
-        "Global Quote": {
-            "01. symbol": symbol,
-            "05. price": "138.50",
-            "09. change": "-2.30",
-            "10. change percent": "-1.63%"
-        }
-    }
+def fetch_stock(symbol):
+    return fetch_market(symbol, "GLOBAL_QUOTE")

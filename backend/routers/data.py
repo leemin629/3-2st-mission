@@ -62,7 +62,7 @@ async def get_summary(
         })
 
     if not records:
-        return {"error": f"{symbol} 데이터가 없습니다."}
+        return {"symbol": symbol, "count": 0, "message": f"{symbol} 데이터가 없습니다."}
 
     # 날짜 오름차순 정렬
     records.sort(key=lambda x: x["date"])
@@ -146,7 +146,7 @@ async def get_history(symbol: str = Query("NVDA")):
         })
 
     if not records:
-        return {"error": f"{symbol} 데이터가 없습니다."}
+        return {"symbol": symbol, "dates": [], "prices": []}
 
     records.sort(key=lambda x: x["date"])
 

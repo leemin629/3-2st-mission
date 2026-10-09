@@ -2,6 +2,8 @@
 
 import re
 import html
+import math
+from datetime import date as date_type
 from fastapi import HTTPException
 
 ALLOWED_SYMBOLS = {"NVDA", "AAPL", "TSLA", "MSFT", "GOOGL"}
@@ -12,7 +14,7 @@ def clean_text(value: str, max_length: int, field_name: str) -> str:
     문자열 입력값을 정리하고 길이를 제한합니다.
     - 앞뒤 공백 제거
     - 제어문자 제거
-    - HTML 특수문자 이스케이프
+    - 화면 출력 시 프론트엔드에서 HTML 특수문자 이스케이프
     - 최대 길이 검사
     """
 
@@ -33,8 +35,8 @@ def clean_text(value: str, max_length: int, field_name: str) -> str:
             detail=f"{field_name}은 최대 {max_length}자까지 입력할 수 있습니다."
         )
 
-    # XSS 방지를 위한 HTML 이스케이프
-    return html.escape(value, quote=True)
+    # 원문을 저장하고 프론트엔드에서 textContent/escapeHTML로 안전하게 출력합니다.
+    return value
 
 
 def validate_symbol(symbol: str) -> str:
@@ -60,10 +62,10 @@ def validate_price(price) -> float:
 
     try:
         price = float(price)
-    except ValueError:
+    except (ValueError, TypeError):
         raise HTTPException(status_code=400, detail="가격은 숫자여야 합니다.")
 
-    if price <= 0:
+    if not math.isfinite(price) or price <= 0:
         raise HTTPException(status_code=400, detail="가격은 0보다 커야 합니다.")
 
     if price > 100000:
@@ -85,4 +87,8 @@ def validate_date(date: str) -> str:
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
         raise HTTPException(status_code=400, detail="날짜는 YYYY-MM-DD 형식이어야 합니다.")
 
+    try:
+        date_type.fromisoformat(date)
+    except ValueError:
+        raise HTTPException(400, detail="존재하지 않는 날짜입니다.")
     return date

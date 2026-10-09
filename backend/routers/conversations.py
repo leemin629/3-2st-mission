@@ -1,47 +1,55 @@
-# routers/conversations.py
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from firebase_config import db
 from firebase_admin import firestore
 
 router = APIRouter()
 
-# 대화 저장용 모델
 class Conversation(BaseModel):
-    message: str
-    reply: str
+    message: str = Field(min_length=1, max_length=500)
+    reply: str = Field(min_length=1)
     model: str = ""
+    symbol: str = "NVDA"
 
-# 1️⃣ POST - 대화 저장
+def read_records():
+    # 과거 conversations 기록도 유지하고 새 채팅과 동일하게 조회합니다.
+    records = []
+    for collection in ("chat_history", "conversations"):
+        for doc in db.collection(collection).stream():
+            records.append({**doc.to_dict(), "id": f"{collection}:{doc.id}"})
+    records.sort(key=lambda item: str(item.get("created_at") or ""), reverse=True)
+    return records
+
+def record_ref(conv_id):
+    collection, sep, identifier = conv_id.partition(":")
+    if not sep:
+        collection, identifier = "conversations", conv_id
+    if collection not in ("chat_history", "conversations") or not identifier:
+        raise HTTPException(400, "잘못된 대화 ID입니다.")
+    return db.collection(collection).document(identifier)
+
 @router.post("")
-async def create_conversation(item: Conversation):
-    ref = db.collection("conversations").add({
-        **item.dict(),
-        "created_at": firestore.SERVER_TIMESTAMP
+def create_conversation(item: Conversation):
+    ref = db.collection("chat_history").add({
+        **item.model_dump(), "created_at": firestore.SERVER_TIMESTAMP
     })
-    return {"id": ref[1].id, **item.dict()}
+    return {"id": f"chat_history:{ref[1].id}", **item.model_dump()}
 
-# 2️⃣ GET - 목록 조회
 @router.get("")
-async def list_conversations():
-    docs = db.collection("conversations")\
-        .order_by("created_at", direction=firestore.Query.DESCENDING)\
-        .stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+def list_conversations():
+    return read_records()
 
-# 3️⃣ GET - 개별 조회
 @router.get("/{conv_id}")
-async def get_conversation(conv_id: str):
-    doc = db.collection("conversations").document(conv_id).get()
+def get_conversation(conv_id: str):
+    doc = record_ref(conv_id).get()
     if not doc.exists:
-        raise HTTPException(status_code=404, detail="대화를 찾을 수 없습니다")
-    return {"id": doc.id, **doc.to_dict()}
+        raise HTTPException(404, "대화를 찾을 수 없습니다.")
+    return {**doc.to_dict(), "id": conv_id}
 
-# 4️⃣ DELETE - 삭제
 @router.delete("/{conv_id}")
-async def delete_conversation(conv_id: str):
-    doc_ref = db.collection("conversations").document(conv_id)
-    if not doc_ref.get().exists:
-        raise HTTPException(status_code=404, detail="대화를 찾을 수 없습니다")
-    doc_ref.delete()
+def delete_conversation(conv_id: str):
+    ref = record_ref(conv_id)
+    if not ref.get().exists:
+        raise HTTPException(404, "대화를 찾을 수 없습니다.")
+    ref.delete()
     return {"message": "삭제 완료", "id": conv_id}

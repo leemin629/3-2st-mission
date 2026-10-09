@@ -589,3 +589,41 @@ body.dark button[class*="chat"] {
 body {
   zoom: 0.8;
 }
+/* 기록 선택, 입력 폼, 모바일 팝업 보완 */
+.status-text, .refresh-tools {max-width:1000px;margin:12px auto;text-align:center;padding:0 16px;}
+.record-select {cursor:pointer; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.record-select:hover, .record-select:focus {background:rgba(79,124,255,.15);}
+.data-table td button {margin:3px;padding:6px 10px;cursor:pointer;}
+.data-table-wrap {min-height:0; overflow:auto;}
+.data-form {max-height:35vh;overflow:auto;flex-shrink:0;}
+.data-form label {display:flex;flex-direction:column;gap:4px;}
+.data-form select {padding:8px;}
+.chat__header, .data-manage__header {touch-action:none;}
+.action-buttons {gap:8px;flex-wrap:wrap;}
+body.dark .data-form input, body.dark .data-form select {background:#222;color:#eee;}
+@media(max-width:600px) {.chat {width:94vw!important;} .data-manage {width:96vw;} .data-table-wrap {padding:0 8px 12px;} .data-form {padding:12px;} }
+
+/* 간결한 대화 기록 목록 */
+#convBox {max-width:540px;max-height:72vh;width:calc(100vw - 32px);}
+#convBox .data-manage__header {padding:14px 18px;}
+.conversation-help {margin:0;padding:12px 18px;font-size:12px;color:#667085;}
+#convCount {float:right;font-weight:600;}
+.conversation-list {overflow-y:auto;overflow-x:hidden;min-height:0;padding:0 14px 14px;}
+.conversation-card {display:flex;align-items:center;gap:8px;border:1px solid #e4e7ec;border-radius:10px;margin-bottom:8px;background:#fff;}
+.conversation-open {display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;text-align:left;border:0;background:transparent;padding:12px;color:#182230;cursor:pointer;border-radius:10px;}
+.conversation-open:hover {background:#f1f5ff;}
+.conversation-open:focus-visible {outline:2px solid #4f7cff;outline-offset:-2px;}
+.conversation-meta {font-size:11px;color:#667085;}
+.conversation-question {font-size:14px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;}
+.conversation-preview {font-size:12px;line-height:1.5;color:#667085;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;}
+.conversation-delete {flex-shrink:0;margin-right:10px;padding:6px 8px;background:#f3f4f6;color:#667085;border:0;border-radius:6px;cursor:pointer;font-size:11px;}
+.conversation-delete:hover {background:#fee4e2;color:#b42318;}
+.conversation-empty {padding:24px 10px;text-align:center;color:#667085;font-size:13px;}
+body.dark .conversation-card {background:#202b40;border-color:#3b4558;}
+body.dark .conversation-open {background:transparent;color:#eee;}
+body.dark .conversation-open:hover {background:#2c3952;}
+body.dark .conversation-meta, body.dark .conversation-preview, body.dark .conversation-help, body.dark .conversation-empty {color:#b2bdd0;}
+body.dark .conversation-delete {background:#344054;color:#ddd;}
+.refresh-tools {display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;}
+#syncBtn {padding:9px 14px;border:0;border-radius:8px;background:#4f7cff;color:white;font-size:13px;cursor:pointer;}
+#syncBtn:disabled {opacity:.6;cursor:wait;}

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Insight AI</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261009b">
   <!-- 📊 Chart.js 라이브러리 추가! -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -25,41 +25,43 @@
   <section class="summary">
     <div class="card">
       <p class="card__label">평균가</p>
-      <p class="card__value">$205.40</p>
+      <p class="card__value">-</p>
     </div>
     <div class="card">
-      <div class="card__label">현재가</div>
+      <div class="card__label">마지막 저장 가격</div>
       <div class="card__value" id="currentPrice">-</div>
     </div>
     <!-- 최고가 카드 -->
    <div class="card">
       <p class="card__label">최고가</p>
-      <p class="card__value" id="highPrice">$242.10</p>
+      <p class="card__value" id="highPrice">-</p>
     </div>
 <!-- 최저가 카드 -->
    <div class="card">
       <p class="card__label">최저가</p>
-      <p class="card__value" id="lowPrice">$168.90</p>
+      <p class="card__value" id="lowPrice">-</p>
    </div>
    <div class="card">   
       <p class="card__label">등락률</p>
-      <p class="card__value" id="changePercent">+18.2%</p>
+      <p class="card__value" id="changePercent">-</p>
     </div>
   </section>
 
+<p id="dataStatus" role="status" class="status-text">저장 데이터 확인 중...</p>
+<div class="refresh-tools"><button id="syncBtn">선택 종목 데이터 갱신</button><span id="syncStatus" role="status"></span></div>
 <!-- 종목 선택 버튼 영역 -->
 <div class="stock-buttons">
-    <button class="active" onclick="selectStock('NVDA')">엔비디아<br>NVDA</button>
-    <button onclick="selectStock('AAPL')">애플<br><small>AAPL</small></button>
-    <button onclick="selectStock('TSLA')">테슬라<br><small>TSLA</small></button>
-    <button onclick="selectStock('MSFT')">마이크로소프트<br><small>MSFT</small></button>
-    <button onclick="selectStock('GOOGL')">구글<br><small>GOOGL</small></button>
+    <button class="active" data-symbol="NVDA" onclick="selectStock('NVDA')">엔비디아<br>NVDA</button>
+    <button data-symbol="AAPL" onclick="selectStock('AAPL')">애플<br><small>AAPL</small></button>
+    <button data-symbol="TSLA" onclick="selectStock('TSLA')">테슬라<br><small>TSLA</small></button>
+    <button data-symbol="MSFT" onclick="selectStock('MSFT')">마이크로소프트<br><small>MSFT</small></button>
+    <button data-symbol="GOOGL" onclick="selectStock('GOOGL')">구글<br><small>GOOGL</small></button>
 </div>
 
 <!-- 📊 차트 영역 (새로 추가!) -->
 <section class="chart-section">
     <h2 class="chart-title">📊 주가 차트</h2>
-    <canvas id="priceChart"></canvas>
+    <canvas id="priceChart"></canvas><p id="chartStatus" role="status"></p>
 </section>
 
 <!-- 🎯 버튼 2개 좌우 배치! -->
@@ -111,16 +113,24 @@
     <button class="data-manage__close" id="dataCloseBtn">✕ 창닫기</button>
   </div>
 
+  <form id="dataForm" class="data-form">
+    <label>종목 <select id="dataSymbol"><option>NVDA</option><option>AAPL</option><option>TSLA</option><option>MSFT</option><option>GOOGL</option></select></label>
+    <label>날짜 <input id="dataDate" type="date" required></label>
+    <label>가격 <input id="dataValue" type="number" min="0.01" max="100000" step="0.01" required></label>
+    <label>메모 <input id="dataMemo" maxlength="200"></label>
+    <button id="dataSubmitBtn" type="submit">추가</button>
+    <button id="dataCancelBtn" type="button" hidden>수정 취소</button>
+  </form>
   <!-- 데이터 목록 (스크롤 영역!) -->
   <div class="data-table-wrap">
     <table class="data-table">
       <thead>
         <tr>
-          <th>종목</th><th>날짜</th><th>가격</th><th>메모</th>
+          <th>종목</th><th>날짜</th><th>가격</th><th>메모</th><th>작업</th>
         </tr>
       </thead>
       <tbody id="dataTableBody">
-        <tr><td colspan="4">불러오는 중...</td></tr>
+        <tr><td colspan="5">불러오는 중...</td></tr>
       </tbody>
     </table>
   </div>
@@ -133,25 +143,14 @@
     <button class="data-manage__close" id="convCloseBtn">✕ 창닫기</button>
   </div>
 
-  <!-- 대화 목록 (스크롤 영역!) -->
-  <div class="data-table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>질문</th><th>답변</th><th>모델</th><th>시간</th><th>삭제</th>
-        </tr>
-      </thead>
-      <tbody id="convTableBody">
-        <tr><td colspan="5">불러오는 중...</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <p class="conversation-help">대화를 누르면 질문과 답변 전체가 열립니다. <span id="convCount"></span></p>
+  <div id="convTableBody" class="conversation-list" aria-live="polite"></div>
 </section>
 
 <button id="darkBtn" style="position:fixed; top:15px; right:15px; padding:8px 16px; border-radius:20px; border:none; cursor:pointer; background:#333; color:#fff; z-index:9999;">
   🌙 다크모드
 </button>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=20261009b"></script>
 </body>
 </html>
