@@ -233,14 +233,26 @@ $("dataForm").addEventListener("submit", async e => {
   finally {$("dataSubmitBtn").disabled = false;}
 });
 $("syncBtn").addEventListener("click", async () => {
-  const symbol = currentSymbol;
-  $("syncBtn").disabled = true; $("syncStatus").textContent = `${symbol} 갱신 중...`;
+  const symbols = ["NVDA", "AAPL", "TSLA", "MSFT", "GOOGL"];
+  $("syncBtn").disabled = true;
+  const results = [];
   try {
-    const data = await request(`/api/stocks/${symbol}/sync`, {method:"POST"});
-    $("syncStatus").textContent = `${symbol}: ${data.added}개 추가, 제공된 마지막 거래일 ${data.latest_date}`;
+    for (let index = 0; index < symbols.length; index++) {
+      const symbol = symbols[index];
+      $("syncStatus").textContent = `5개 종목 갱신 중 (${index + 1}/5): ${symbol}`;
+      try {
+        const data = await request(`/api/stocks/${symbol}/sync`, {method:"POST"});
+        results.push(`${symbol}: ${data.added}개 추가 · ${data.latest_date}`);
+      } catch (err) {
+        results.push(`${symbol}: 실패 · ${err.message}`);
+      }
+      $("syncStatus").textContent = results.join("\n") + (index < symbols.length - 1 ? "\n다음 종목을 갱신합니다..." : "");
+    }
     await refreshData();
-  } catch(err) {$("syncStatus").textContent = `갱신 실패: ${err.message}`;}
-  finally {$("syncBtn").disabled = false;}
+  } finally {
+    $("syncBtn").disabled = false;
+    $("syncStatus").textContent = "5개 종목 갱신 결과\n" + results.join("\n");
+  }
 });
 function updateDarkBtn() {$("darkBtn").textContent = document.body.classList.contains("dark") ? "☀️ 라이트모드" : "🌙 다크모드";}
 try {if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");} catch (_) {}

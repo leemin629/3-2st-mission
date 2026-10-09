@@ -90,6 +90,42 @@ def get_stock_summary(symbol="NVDA"):
         "trend": trend
     }
 
+# 질문에 명시한 종목들을 함께 요약합니다.
+def select_chat_symbols(message, fallback):
+    symbol_map = {
+        "NVDA": ["NVDA", "엔비디아", "NVIDIA"],
+        "AAPL": ["AAPL", "애플", "APPLE"],
+        "TSLA": ["TSLA", "테슬라", "TESLA"],
+        "MSFT": ["MSFT", "마이크로소프트", "MICROSOFT"],
+        "GOOGL": ["GOOGL", "구글", "GOOGLE", "알파벳"],
+    }
+    upper = message.upper()
+    compact = "".join(upper.split())
+    all_markers = ("5개", "다섯", "전체종목", "모든종목", "전종목", "ALLSTOCKS", "ALLFIVE")
+    if any(marker in compact for marker in all_markers):
+        return list(symbol_map)
+    found = [symbol for symbol, keywords in symbol_map.items()
+             if any(keyword.upper() in upper for keyword in keywords)]
+    return found or list(symbol_map)
+
+
+def build_chat_context(symbols):
+    sections = []
+    for symbol in symbols:
+        summary = get_stock_summary(symbol)
+        if not summary:
+            sections.append(f"[{symbol}] 저장 데이터가 없습니다. 가격을 추측하지 마세요.")
+            continue
+        sections.append(f"""[{symbol} 저장 데이터 {summary['start_date']} ~ {summary['end_date']} ({summary['count']}개)]
+- 마지막 저장 가격: ${summary['current']}
+- 평균가: ${summary['average']}
+- 최고 저장 가격: ${summary['high']}
+- 최저 저장 가격: ${summary['low']}
+- 저장 기간 첫 가격 대비 등락률: {summary['change_percent']}%
+- 추세: {summary['trend']}""")
+    return "\n\n".join(sections)
+
+
 # 💬 채팅 엔드포인트
 @app.post("/chat")
 def chat(req: ChatRequest):
@@ -97,64 +133,19 @@ def chat(req: ChatRequest):
     if not req.message:
         raise HTTPException(400, "메시지를 입력해 주세요.")
     req.symbol = validate_symbol(req.symbol)
-    # 🔍 종목별 별명 사전 (한글/영문 다 인식!)
-    SYMBOL_MAP = {
-        "NVDA":  ["NVDA", "엔비디아", "NVIDIA"],
-        "AAPL":  ["AAPL", "애플", "APPLE"],
-        "TSLA":  ["TSLA", "테슬라", "TESLA"],
-        "MSFT":  ["MSFT", "마이크로소프트", "MICROSOFT"],
-        "GOOGL": ["GOOGL", "구글", "GOOGLE", "알파벳"],
-    }
-
-    selected = None
-    msg_upper = req.message.upper()
-    for symbol, keywords in SYMBOL_MAP.items():
-        if any(kw.upper() in msg_upper for kw in keywords):
-            selected = symbol
-            break
-
-    # 질문에 종목이 없으면 화면에서 선택한 종목을 사용합니다.
-    selected = selected or req.symbol
-    summary = get_stock_summary(selected)
-
-    if selected and summary:
-        # ✅ 특정 종목 → 데이터 기반 답변
-        data_context = f"""
-[{selected} 저장 데이터 {summary['start_date']} ~ {summary['end_date']} ({summary['count']}개)]
-- 마지막 저장 가격: ${summary['current']}
-- 평균가: ${summary['average']}
-- 최고가: ${summary['high']}
-- 최저가: ${summary['low']}
-- 변동률: {summary['change_percent']}%
-- 추세: {summary['trend']}
-"""
-        system_prompt = f"""너는 {selected} 주가 분석 챗봇이야. 아래 규칙을 반드시 지켜서 답변해:
-
-1. 반드시 아래 제공된 [실제 데이터]에 근거해서 답변한다.
-2. 데이터에 없는 내용은 일반 지식으로 보충한다.
-3. 핵심만 간결하게 답변한다.
-4. 내용이 여러 개면 '## 제목'으로 주제를 나눈다.
-5. 강조는 **강조** 마크다운을 사용한다. 저장 가격을 실시간 시세로 표현하지 않는다.
-6. 각 주제는 최대 3줄 이내로 요약한다.
-7. 불필요한 서론과 면책조항은 쓰지 않는다.
-8. 항상 정중하고 공손한 존댓말('~습니다', '~됩니다')로 답변한다.
+    symbols = select_chat_symbols(req.message, req.symbol)
+    selected = ", ".join(symbols)
+    data_context = build_chat_context(symbols)
+    system_prompt = f"""너는 저장된 미국 주가 자료를 설명하는 도우미입니다.
+항상 정중한 한국어로 간결하게 답변하세요.
+1. 요청 대상은 {selected}입니다. 여러 종목이면 제공된 모든 대상 종목을 설명하세요.
+2. 가격과 통계는 아래 저장 데이터에 근거하고, 데이터가 없는 종목은 없다고 표시하세요.
+3. 저장 종가를 장중 실시간 시세로 표현하지 마세요. 기준일과 기간을 확인하세요.
+4. 종목별 기간이 다르면 비교의 기간 차이를 밝혀 주세요.
+5. 최신 뉴스나 수집하지 않은 가격·원인을 추측하지 마세요. 일반 설명은 저장 데이터와 구분하세요.
+6. 소제목은 '## 제목', 강조는 **강조** 마크다운을 사용하세요.
 
 {data_context}
-
-사용자 질문: """
-
-    else:
-        # 🧠 시장 전반 질문 → 애널리스트 모드!
-        system_prompt = f"선택 종목 {selected}의 저장 데이터가 없습니다. 구체적 가격을 추측하지 마세요.\n" + """너는 미국 주식시장 전문 애널리스트야. 아래 규칙을 반드시 지켜:
-
-1. 미국 주식시장, 산업, 경제 전반에 대해 전문가답게 답변한다.
-2. 핵심만 간결하게 답변한다.
-3. 내용이 여러 개면 '## 제목'으로 주제를 나눈다.
-4. 강조는 **강조** 마크다운을 사용한다. 저장 가격을 실시간 시세로 표현하지 않는다.
-5. 각 주제는 최대 3줄 이내로 요약한다.
-6. 특정 종목 상세 데이터가 필요하면 "NVDA, AAPL, TSLA, MSFT, GOOGL 중 하나를 물어보세요"라고 안내한다.
-7. 불필요한 서론과 면책조항은 쓰지 않는다.
-8. 항상 정중하고 공손한 존댓말('~습니다', '~됩니다')로 답변한다.
 
 사용자 질문: """
 
@@ -173,14 +164,14 @@ def chat(req: ChatRequest):
             try:
                 db.collection("chat_history").add({
                     "message": req.message, "reply": reply, "model": model_name,
-                    "symbol": selected, "created_at": firestore.SERVER_TIMESTAMP
+                    "symbol": selected, "symbols": symbols, "created_at": firestore.SERVER_TIMESTAMP
                 })
                 saved = True
             except Exception:
                 logging.exception("대화 저장 실패")
                 saved = False
 
-            return {"reply": reply, "model": model_name, "symbol": selected, "saved": saved}
+            return {"reply": reply, "model": model_name, "symbol": selected, "symbols": symbols, "saved": saved}
         except Exception as e:
             print(f"{model_name} 실패: {e}")
             continue
