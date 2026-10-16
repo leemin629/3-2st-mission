@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Insight AI</title>
-  <link rel="stylesheet" href="style.css?v=20261009d">
+  <link rel="stylesheet" href="style.css?v=20261016-alert1">
   <!-- 📊 Chart.js 라이브러리 추가! -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -48,7 +48,11 @@
   </section>
 
 <p id="dataStatus" role="status" class="status-text">저장 데이터 확인 중...</p>
-<div class="refresh-tools"><button id="syncBtn">5개 종목 데이터 갱신</button><span id="syncStatus" role="status"></span></div>
+<div class="refresh-tools"><button id="syncBtn">5개 종목 데이터 갱신</button><button id="showAlertsBtn" type="button">🔔 목표가 기록</button><span id="syncStatus" role="status"></span></div>
+<section id="priceAlertPanel" class="price-alert-panel" hidden aria-label="목표가 도달 기록">
+  <div class="price-alert-heading"><strong>🔔 목표가 도달 기록</strong><button id="dismissAlertsBtn" type="button">접기</button></div>
+  <div id="priceAlertMessages" role="status" aria-live="polite"></div>
+</section>
 <!-- 종목 선택 버튼 영역 -->
 <div class="stock-buttons">
     <button class="active" data-symbol="NVDA" onclick="selectStock('NVDA')">엔비디아<br>NVDA</button>
@@ -118,19 +122,22 @@
     <label>날짜 <input id="dataDate" type="date" required></label>
     <label>가격 <input id="dataValue" type="number" min="0.01" max="100000" step="0.01" required></label>
     <label>메모 <input id="dataMemo" maxlength="200"></label>
-    <button id="dataSubmitBtn" type="submit">추가</button>
-    <button id="dataCancelBtn" type="button" hidden>수정 취소</button>
+    <label>알림 조건 <select id="dataAlertDirection"><option value="none">알림 없음</option><option value="above">목표가 이상</option><option value="below">목표가 이하</option></select></label>
+    <label>목표 가격 ($) <input id="dataAlertTarget" type="number" min="0.01" max="100000" step="0.01" placeholder="예: 180" disabled></label>
+    <div class="data-form-actions"><button id="dataSubmitBtn" type="submit">추가</button>
+    <button id="dataCancelBtn" type="button" hidden>수정 취소</button></div>
+    <p class="data-form-note">목표가는 저장 가격과 별도입니다. 저장 후 데이터 갱신 시 마지막 제공 종가로 한 번 알립니다.</p>
   </form>
   <!-- 데이터 목록 (스크롤 영역!) -->
   <div class="data-table-wrap">
     <table class="data-table">
       <thead>
         <tr>
-          <th>종목</th><th>날짜</th><th>가격</th><th>메모</th><th>작업</th>
+          <th>종목</th><th>날짜</th><th>가격</th><th>메모</th><th>가격 알림</th><th>작업</th>
         </tr>
       </thead>
       <tbody id="dataTableBody">
-        <tr><td colspan="5">불러오는 중...</td></tr>
+        <tr><td colspan="6">불러오는 중...</td></tr>
       </tbody>
     </table>
   </div>
@@ -151,6 +158,6 @@
   🌙 다크모드
 </button>
 
-  <script src="app.js?v=20261009d"></script>
+  <script src="app.js?v=20261016-alert1"></script>
 </body>
 </html>

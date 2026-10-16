@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from services.stock_service import fetch_stock, fetch_market
 from firebase_config import db
 from validation_utils import validate_symbol, validate_date, validate_price
+from services.price_alert_service import evaluate_price_alerts
+import logging
 
 router = APIRouter()
 
@@ -33,7 +35,16 @@ def sync_stock(symbol: str):
                 raise HTTPException(503, "일부 데이터 저장에 실패했습니다. 다시 갱신해 주세요.")
             continue
         added += 1
-    return {"symbol": symbol, "added": added, "latest_date": max(day for day, _ in records)}
+    day, price = max(records, key=lambda record: record[0])
+    # 수동 입력 자료가 아닌, 이번에 제공처에서 받은 마지막 종가로만 판정합니다.
+    try:
+        alerts = evaluate_price_alerts(db, symbol, day, price)
+        alert_error = None
+    except Exception:
+        logging.exception("목표가 알림 확인 실패")
+        alerts, alert_error = [], "가격은 갱신했지만 목표가 알림 확인에 실패했습니다. 다시 갱신해 주세요."
+    return {"symbol": symbol, "added": added, "latest_date": day,
+            "alerts": alerts, "alert_error": alert_error}
 
 @router.get("/{symbol}")
 def read_stock(symbol: str):

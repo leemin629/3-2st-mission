@@ -629,3 +629,29 @@ body.dark .conversation-delete {background:#344054;color:#ddd;}
 #syncBtn:disabled {opacity:.6;cursor:wait;}
 
 #syncStatus {white-space:pre-line;text-align:left;line-height:1.7;overflow-wrap:anywhere;}
+
+/* 데이터 입력과 가격 알림: 버튼이 늘어나거나 글자가 세로로 감기지 않도록 정렬 */
+#dataBox {max-width:1180px;width:calc(100vw - 32px);}
+#dataBox .data-form {display:grid;grid-template-columns:90px 145px 115px minmax(120px,1fr) 125px 120px auto;gap:10px;align-items:end;max-height:40vh;}
+#dataBox .data-form label {min-width:0;gap:6px;font-size:13px;font-weight:600;text-align:center;}
+#dataBox .data-form input, #dataBox .data-form select {width:100%;min-width:0;height:40px;box-sizing:border-box;padding:8px;border:1px solid #d0d5dd;border-radius:8px;font:inherit;font-weight:400;text-align:center;background:#fff;color:#182230;}
+#dataBox .data-form input:disabled {background:#f2f4f7;color:#98a2b3;}
+.data-form-actions {display:flex;gap:6px;align-items:center;flex-wrap:nowrap;}
+#dataSubmitBtn, #dataCancelBtn {height:40px;min-width:70px;padding:0 14px;border:0;border-radius:8px;font-size:14px;font-weight:700;white-space:nowrap;cursor:pointer;}
+#dataSubmitBtn {background:#4f7cff;color:#fff;}
+#dataCancelBtn {background:#e4e7ec;color:#344054;}
+#dataSubmitBtn:disabled {opacity:.6;cursor:wait;}
+#dataCancelBtn[hidden] {display:none;}
+.data-form-note {grid-column:1/-1;margin:2px 0 0;color:#667085;font-size:12px;line-height:1.5;text-align:center;}
+.price-alert-cell {white-space:nowrap;font-size:12px;}
+.price-alert-panel {max-width:960px;margin:16px auto;padding:14px 18px;box-sizing:border-box;border:1px solid #f2b84a;border-radius:12px;background:#fff8e6;color:#714b00;}
+.price-alert-panel[hidden] {display:none;}
+.price-alert-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.price-alert-heading button, #showAlertsBtn {padding:8px 12px;border:0;border-radius:8px;white-space:nowrap;cursor:pointer;}
+#showAlertsBtn {background:#fff1cf;color:#714b00;font-weight:600;}
+#priceAlertMessages p {font-size:13px;line-height:1.6;margin:8px 0 0;overflow-wrap:anywhere;}
+body.dark #dataBox .data-form input, body.dark #dataBox .data-form select {background:#202b40;color:#eee;border-color:#475467;}
+body.dark .data-form-note {color:#b2bdd0;}
+body.dark #priceAlertPanel {background:#302a1e!important;color:#ffe1a0!important;border-color:#b2873d;}
+@media(max-width:1100px) {#dataBox .data-form {grid-template-columns:repeat(3,minmax(0,1fr));}.data-form-actions {justify-content:flex-end;grid-column:1/-1;}}
+@media(max-width:600px) {#dataBox .data-form {grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;}.data-form-note {font-size:11px;}.data-form-actions {justify-content:center;} .price-alert-panel {margin:12px 16px;}}

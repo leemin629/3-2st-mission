@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from firebase_config import db
 from validation_utils import clean_text, validate_symbol, validate_price, validate_date
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Literal
+from firebase_admin import firestore
+from services.price_alert_service import alert_settings
 
 router = APIRouter()
 
@@ -14,13 +16,18 @@ class DataItem(BaseModel):
     date: str
     value: float
     memo: str = ""
+    alert_direction: Literal["none", "above", "below"] = "none"
+    alert_target: Optional[float] = None
+    rearm_alert: bool = False
 
 
 def sanitize_data_item(item: DataItem) -> dict:
     """
     데이터 추가/수정 전에 입력값을 검증하고 정리합니다.
     """
+    target = validate_price(item.alert_target) if item.alert_direction != "none" else None
     return {
+        "alert_direction": item.alert_direction, "alert_target": target,
         "symbol": validate_symbol(item.symbol),
         "date": validate_date(item.date),
         "value": validate_price(item.value),
@@ -160,6 +167,15 @@ async def get_history(symbol: str = Query("NVDA")):
     }
 
 
+# 전체 종목의 목표가 도달 기록 (새로고침 후에도 확인 가능)
+@router.get("/alerts")
+def list_price_alerts():
+    docs = db.collection("data").where("alert_status", "==", "triggered").stream()
+    result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+    result.sort(key=lambda item: str(item.get("alert_triggered_at") or ""), reverse=True)
+    return result
+
+
 # ===== CRUD =====
 
 # 1. POST /api/data - 새 데이터 추가
@@ -167,6 +183,7 @@ async def get_history(symbol: str = Query("NVDA")):
 async def create_data(item: DataItem):
     safe_item = sanitize_data_item(item)
 
+    safe_item.update(alert_settings(item.alert_direction, safe_item["alert_target"], symbol=safe_item["symbol"]))
     ref = db.collection("data").add(safe_item)
 
     return {
@@ -202,19 +219,23 @@ async def list_data(symbol: str = Query(None)):
 # 3. PUT /api/data/{id} - 수정
 @router.put("/{item_id}")
 async def update_data(item_id: str, item: DataItem):
+    safe_item = sanitize_data_item(item)
     doc_ref = db.collection("data").document(item_id)
 
-    if not doc_ref.get().exists:
-        raise HTTPException(status_code=404, detail="데이터를 찾을 수 없습니다")
+    @firestore.transactional
+    def save(transaction):
+        snapshot = doc_ref.get(transaction=transaction)
+        if not snapshot.exists:
+            raise HTTPException(status_code=404, detail="데이터를 찾을 수 없습니다")
+        patch = dict(safe_item)
+        patch.update(alert_settings(item.alert_direction, safe_item["alert_target"],
+                                    snapshot.to_dict(), item.rearm_alert, safe_item["symbol"]))
+        transaction.update(doc_ref, patch)
+        return patch
 
-    safe_item = sanitize_data_item(item)
+    patch = save(db.transaction())
+    return {"id": item_id, **patch}
 
-    doc_ref.update(safe_item)
-
-    return {
-        "id": item_id,
-        **safe_item
-    }
 
 
 # 4. DELETE /api/data/{id} - 삭제

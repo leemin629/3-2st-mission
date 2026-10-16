@@ -189,46 +189,69 @@ async function deleteConversation(id) {
 }
 function resetForm() {
   editingId = null; $("dataForm").reset(); $("dataSymbol").value = currentSymbol;
-  $("dataSubmitBtn").textContent = "추가"; $("dataCancelBtn").hidden = true;
+  $("dataSubmitBtn").textContent = "추가"; $("dataCancelBtn").hidden = true; updateAlertInput();
 }
 async function loadDataList() {
   const symbol = currentSymbol;
-  tableStatus("dataTableBody", 5, "불러오는 중...");
+  tableStatus("dataTableBody", 6, "불러오는 중...");
   try {
     const list = await request(`/api/data?symbol=${symbol}`);
     if(symbol !== currentSymbol) return;
     $("dataTableBody").replaceChildren();
-    if(!list.length) return tableStatus("dataTableBody", 5, "데이터가 없습니다.");
+    if(!list.length) return tableStatus("dataTableBody", 6, "데이터가 없습니다.");
     for(const item of list) {
       const row = document.createElement("tr");
       for(const value of [item.symbol, item.date, `$${item.value}`, item.memo]) {
         const cell = document.createElement("td"); cell.textContent = value || "-"; row.appendChild(cell);
       }
+      const conditionCell = document.createElement("td");
+      conditionCell.className = "price-alert-cell";
+      const direction = item.alert_direction || "none";
+      conditionCell.textContent = direction === "none" ? "없음" :
+        `$${Number(item.alert_target).toFixed(2)} ${direction === "above" ? "이상" : "이하"} · ${item.alert_status === "triggered" ? "알림 완료" : "대기"}`;
+      row.appendChild(conditionCell);
       const actions = document.createElement("td");
       const edit = document.createElement("button"); edit.textContent = "수정";
       edit.addEventListener("click", () => {
         editingId = item.id;
         for(const [id, value] of [["dataSymbol",item.symbol],["dataDate",item.date],["dataValue",item.value],["dataMemo",item.memo]]) $(id).value = value || "";
+        $("dataAlertDirection").value = item.alert_direction || "none";
+        $("dataAlertTarget").value = item.alert_target ?? ""; updateAlertInput();
         $("dataSubmitBtn").textContent = "저장"; $("dataCancelBtn").hidden = false; $("dataMemo").focus();
       });
       const del = document.createElement("button"); del.textContent = "삭제";
       del.addEventListener("click", async () => {
         if(!confirm("이 데이터를 삭제할까요?")) return;
-        try {await request(`/api/data/${encodeURIComponent(item.id)}`, {method:"DELETE"}); if(editingId === item.id) resetForm(); await refreshData();}
+        try {await request(`/api/data/${encodeURIComponent(item.id)}`, {method:"DELETE"}); if(editingId === item.id) resetForm(); await refreshData(); await loadPriceAlerts();}
         catch(err) {alert(`삭제 실패: ${err.message}`);}
       });
-      actions.append(edit, del); row.appendChild(actions); $("dataTableBody").appendChild(row);
+      actions.append(edit, del);
+      if(item.alert_status === "triggered" && direction !== "none") {
+        const rearm = document.createElement("button"); rearm.textContent = "다시 알림 설정";
+        rearm.addEventListener("click", async () => {
+          rearm.disabled = true;
+          try {
+            await request(`/api/data/${encodeURIComponent(item.id)}`, jsonRequest("PUT", {
+              symbol:item.symbol, date:item.date, value:item.value, memo:item.memo || "",
+              alert_direction:direction, alert_target:item.alert_target, rearm_alert:true
+            }));
+            await loadDataList(); await loadPriceAlerts();
+          } catch(err) {alert(`재설정 실패: ${err.message}`); rearm.disabled = false;}
+        });
+        actions.appendChild(rearm);
+      }
+      row.appendChild(actions); $("dataTableBody").appendChild(row);
     }
-  } catch(err) {if(symbol === currentSymbol) tableStatus("dataTableBody", 5, `조회 실패: ${err.message}`);}
+  } catch(err) {if(symbol === currentSymbol) tableStatus("dataTableBody", 6, `조회 실패: ${err.message}`);}
 }
 $("dataCancelBtn").addEventListener("click", resetForm);
 $("dataForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const body = {symbol:$("dataSymbol").value,date:$("dataDate").value,value:Number($("dataValue").value),memo:$("dataMemo").value};
+  const body = {symbol:$("dataSymbol").value,date:$("dataDate").value,value:Number($("dataValue").value),memo:$("dataMemo").value, alert_direction:$("dataAlertDirection").value, alert_target:$("dataAlertDirection").value === "none" ? null : Number($("dataAlertTarget").value)};
   $("dataSubmitBtn").disabled = true;
   try {
     await request(editingId ? `/api/data/${encodeURIComponent(editingId)}` : "/api/data", jsonRequest(editingId ? "PUT" : "POST", body));
-    resetForm(); await refreshData();
+    resetForm(); await refreshData(); await loadPriceAlerts();
   } catch(err) {alert(`저장 실패: ${err.message}`);}
   finally {$("dataSubmitBtn").disabled = false;}
 });
@@ -236,24 +259,55 @@ $("syncBtn").addEventListener("click", async () => {
   const symbols = ["NVDA", "AAPL", "TSLA", "MSFT", "GOOGL"];
   $("syncBtn").disabled = true;
   const results = [];
+  const notifications = [];
   try {
     for (let index = 0; index < symbols.length; index++) {
       const symbol = symbols[index];
       $("syncStatus").textContent = `5개 종목 갱신 중 (${index + 1}/5): ${symbol}`;
       try {
         const data = await request(`/api/stocks/${symbol}/sync`, {method:"POST"});
-        results.push(`${symbol}: ${data.added}개 추가 · ${data.latest_date}`);
+        results.push(`${symbol}: ${data.added}개 추가 · ${data.latest_date}${data.alert_error ? " · " + data.alert_error : ""}`);
+        notifications.push(...(data.alerts || []));
       } catch (err) {
         results.push(`${symbol}: 실패 · ${err.message}`);
       }
       $("syncStatus").textContent = results.join("\n") + (index < symbols.length - 1 ? "\n다음 종목을 갱신합니다..." : "");
     }
-    await refreshData();
+    await refreshData(); await loadPriceAlerts();
+    if(notifications.length) {
+      alert("🔔 목표 가격 조건에 도달했습니다.\n" + notifications.map(item =>
+        `${item.symbol}: ${item.date} 종가 $${Number(item.price).toFixed(2)} (목표 $${Number(item.target).toFixed(2)} ${item.direction === "above" ? "이상" : "이하"})`
+      ).join("\n"));
+    }
   } finally {
     $("syncBtn").disabled = false;
     $("syncStatus").textContent = "5개 종목 갱신 결과\n" + results.join("\n");
   }
 });
+function updateAlertInput() {
+  const enabled = $("dataAlertDirection").value !== "none";
+  $("dataAlertTarget").disabled = !enabled;
+  $("dataAlertTarget").required = enabled;
+}
+$("dataAlertDirection").addEventListener("change", updateAlertInput);
+$("dismissAlertsBtn").addEventListener("click", () => {$("priceAlertPanel").hidden = true;});
+$("showAlertsBtn").addEventListener("click", () => loadPriceAlerts(true));
+async function loadPriceAlerts(showEmpty = false) {
+  try {
+    const records = await request("/api/data/alerts");
+    const box = $("priceAlertMessages"); box.replaceChildren();
+    for(const item of records) {
+      const row = document.createElement("p");
+      row.textContent = `${item.symbol} · ${item.alert_triggered_date} 종가 $${Number(item.alert_triggered_price).toFixed(2)} / 목표 $${Number(item.alert_target).toFixed(2)} ${item.alert_direction === "above" ? "이상" : "이하"}${item.memo ? " · " + item.memo : ""}`;
+      box.appendChild(row);
+    }
+    if(!records.length) box.textContent = "아직 목표가 도달 기록이 없습니다.";
+    $("priceAlertPanel").hidden = !records.length && !showEmpty;
+  } catch(err) {
+    $("priceAlertPanel").hidden = false;
+    $("priceAlertMessages").textContent = `목표가 도달 기록 조회 실패: ${err.message}`;
+  }
+}
 function updateDarkBtn() {$("darkBtn").textContent = document.body.classList.contains("dark") ? "☀️ 라이트모드" : "🌙 다크모드";}
 try {if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");} catch (_) {}
 $("darkBtn").addEventListener("click", () => {
@@ -261,4 +315,4 @@ $("darkBtn").addEventListener("click", () => {
   try {localStorage.setItem("darkMode", document.body.classList.contains("dark"));} catch (_) {}
   updateDarkBtn(); loadChart();
 });
-updateDarkBtn(); resetForm(); loadStock(); loadChart(); loadHistory();
+updateDarkBtn(); resetForm(); loadStock(); loadChart(); loadHistory(); loadPriceAlerts();
