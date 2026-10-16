@@ -42,10 +42,10 @@ async function loadStock(symbol = currentSymbol) {
         const difference = i === 4 ? values[i] : values[i] - data.average_price;
         el.style.color = difference > 0 ? "#e53935" : difference < 0 ? "#1e88e5" : "#757575";
         if (difference !== 0) el.textContent += difference > 0 ? " ▲" : " ▼";
-        el.title = i === 4 ? "기간 첫 가격 대비 변화율" : "저장 기간 평균가 대비 높음/낮음";
+        el.title = i === 4 ? "기간 첫 가격 대비 변화율" : "최근 최대 100개 자료 평균가 대비 높음/낮음";
       }
     });
-    $("dataStatus").textContent = `${symbol} 저장 데이터: ${data.start_date} ~ ${data.end_date} (${data.count}개). 실시간 시세가 아닙니다. 등락률은 기간 첫 가격 대비입니다.`;
+    $("dataStatus").textContent = `${symbol} 최근 최대 100개 자료: ${data.start_date} ~ ${data.end_date} (${data.count}개). 실시간 시세가 아닙니다. 등락률은 기간 첫 가격 대비입니다.`;
   } catch (err) { if (symbol === currentSymbol) {clearSummary(); $("dataStatus").textContent = `요약 조회 실패: ${err.message}`;} }
 }
 async function loadChart(symbol = currentSymbol) {
@@ -195,7 +195,8 @@ async function loadDataList() {
   const symbol = currentSymbol;
   tableStatus("dataTableBody", 6, "불러오는 중...");
   try {
-    const list = await request(`/api/data?symbol=${symbol}`);
+    const view = $("dataListMode").value || "recent";
+    const list = await request(`/api/data?symbol=${symbol}&view=${view}`);
     if(symbol !== currentSymbol) return;
     $("dataTableBody").replaceChildren();
     if(!list.length) return tableStatus("dataTableBody", 6, "데이터가 없습니다.");
@@ -244,6 +245,7 @@ async function loadDataList() {
     }
   } catch(err) {if(symbol === currentSymbol) tableStatus("dataTableBody", 6, `조회 실패: ${err.message}`);}
 }
+$("dataListMode").addEventListener("change", loadDataList);
 $("dataCancelBtn").addEventListener("click", resetForm);
 $("dataForm").addEventListener("submit", async e => {
   e.preventDefault();

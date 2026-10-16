@@ -655,3 +655,7 @@ body.dark .data-form-note {color:#b2bdd0;}
 body.dark #priceAlertPanel {background:#302a1e!important;color:#ffe1a0!important;border-color:#b2873d;}
 @media(max-width:1100px) {#dataBox .data-form {grid-template-columns:repeat(3,minmax(0,1fr));}.data-form-actions {justify-content:flex-end;grid-column:1/-1;}}
 @media(max-width:600px) {#dataBox .data-form {grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;}.data-form-note {font-size:11px;}.data-form-actions {justify-content:center;} .price-alert-panel {margin:12px 16px;}}
+
+.data-list-tools {padding:10px 20px;text-align:center;font-size:13px;}
+.data-list-tools select {margin-left:8px;padding:7px 10px;border:1px solid #d0d5dd;border-radius:8px;background:#fff;color:#182230;}
+body.dark .data-list-tools select {background:#202b40;color:#eee;border-color:#475467;}

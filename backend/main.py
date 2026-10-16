@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from fastapi import HTTPException
 from validation_utils import validate_symbol
+from services.stock_data_service import read_records, summarize_records
 import logging
 import google.generativeai as genai
 import os
@@ -61,33 +62,15 @@ def available_models():
 
 # 📊 Firestore에서 요약 통계 계산
 def get_stock_summary(symbol="NVDA"):
-    docs = db.collection("data").where("symbol", "==", symbol).stream()
-    records = []
-    for doc in docs:
-        d = doc.to_dict()
-        records.append({"date": d["date"], "value": d["value"]})
-
-    if not records:
+    summary = summarize_records(read_records(symbol))
+    if not summary:
         return None
-
-    prices = [r["value"] for r in records]
-    records.sort(key=lambda x: x["date"])
-
-    oldest = records[0]["value"]
-    latest = records[-1]["value"]
-    change_percent = (latest - oldest) / oldest * 100 if oldest else 0
-    trend = "상승" if change_percent > 0 else "하락" if change_percent < 0 else "보합"
-
     return {
-        "start_date": records[0]["date"],
-        "end_date": records[-1]["date"],
-        "count": len(records),
-        "current": round(latest, 2),
-        "average": round(sum(prices) / len(prices), 2),
-        "high": round(max(prices), 2),
-        "low": round(min(prices), 2),
-        "change_percent": round(change_percent, 2),
-        "trend": trend
+        "start_date": summary["start_date"], "end_date": summary["end_date"],
+        "count": summary["count"], "current": summary["current_price"],
+        "average": summary["average_price"], "high": summary["high_price"],
+        "low": summary["low_price"], "change_percent": summary["change_percent"],
+        "trend": summary["trend"],
     }
 
 # 질문에 명시한 종목들을 함께 요약합니다.
@@ -116,7 +99,7 @@ def build_chat_context(symbols):
         if not summary:
             sections.append(f"[{symbol}] 저장 데이터가 없습니다. 가격을 추측하지 마세요.")
             continue
-        sections.append(f"""[{symbol} 저장 데이터 {summary['start_date']} ~ {summary['end_date']} ({summary['count']}개)]
+        sections.append(f"""[{symbol} 최근 최대 100개 일별 자료 {summary['start_date']} ~ {summary['end_date']} ({summary['count']}개)]
 - 마지막 저장 가격: ${summary['current']}
 - 평균가: ${summary['average']}
 - 최고 저장 가격: ${summary['high']}
@@ -167,6 +150,7 @@ def build_chat_prompt(symbols, data_context):
 - 수익률 예측이나 매수·매도를 단정하지 마세요. 가정과 불확실성을 설명하세요.
 
 [저장 자료 사용 기준]
+- 아래 통계는 종목별 최근 최대 100개 자료만 사용합니다. 이전 원본은 보관하지만 이 통계에는 포함하지 않습니다. 전체 보관 기간이나 전체 누적 성과라고 설명하지 마세요.
 - 참고 가능한 종목: {selected}. 모두의 자료를 제공하더라도 질문과 관련 있는 종목만 언급할 수 있습니다.
 - 저장 가격을 사용할 때는 아래 숫자에 근거하세요. 자료가 없는 종목의 가격은 추측하지 마세요.
 - 기간의 시작일은 관측 구간의 첫 날짜이며 '수집한 날짜'라고 바꾸어 설명하지 마세요.

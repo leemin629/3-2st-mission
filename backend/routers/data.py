@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Literal
 from firebase_admin import firestore
 from services.price_alert_service import alert_settings
+from services.stock_data_service import read_records, summarize_records, WINDOW_LIMIT
 
 router = APIRouter()
 
@@ -46,125 +47,32 @@ async def get_summary(
         description="최근 N일 기준으로 요약합니다. 예: 7, 30, 90"
     )
 ):
-    """
-    선택한 종목의 요약 정보를 반환합니다.
-
-    - period가 없으면 전체 데이터 기준으로 요약
-    - period가 있으면 가장 최근 날짜를 기준으로 최근 N일 데이터만 요약
-      예: /api/data/summary?symbol=NVDA&period=30
-    """
+    """최근 100개 자료 기준. period는 그 범위 안에서 마지막 저장일 기준 N일을 선택합니다."""
     symbol = validate_symbol(symbol)
+    records = read_records(symbol)
+    if period is not None and records:
+        latest = datetime.strptime(records[0]["date"], "%Y-%m-%d").date()
+        start = (latest - timedelta(days=period - 1)).isoformat()
+        records = [row for row in records if row["date"] >= start]
+    summary = summarize_records(records)
+    if not summary:
+        return {"symbol": symbol, "count": 0, "window_limit": WINDOW_LIMIT,
+                "message": f"{symbol} 데이터가 없습니다."}
+    return {"symbol": symbol, "period": period,
+            "summary 기준": "최근 100개 자료" if period is None else f"최근 100개 중 최근 {period}일",
+            **summary}
 
-    docs = db.collection("data") \
-        .where("symbol", "==", symbol) \
-        .stream()
-
-    records = []
-
-    for doc in docs:
-        d = doc.to_dict()
-        records.append({
-            "date": d["date"],
-            "value": d["value"]
-        })
-
-    if not records:
-        return {"symbol": symbol, "count": 0, "message": f"{symbol} 데이터가 없습니다."}
-
-    # 날짜 오름차순 정렬
-    records.sort(key=lambda x: x["date"])
-
-    # period 파라미터가 있으면 최근 N일 데이터만 필터링
-    start_date = None
-    end_date = None
-
-    if period is not None:
-        latest_date = datetime.strptime(records[-1]["date"], "%Y-%m-%d").date()
-        start_date_obj = latest_date - timedelta(days=period - 1)
-
-        start_date = start_date_obj.isoformat()
-        end_date = latest_date.isoformat()
-
-        records = [
-            r for r in records
-            if start_date_obj <= datetime.strptime(r["date"], "%Y-%m-%d").date() <= latest_date
-        ]
-
-    if not records:
-        return {
-            "symbol": symbol,
-            "period": period,
-            "start_date": start_date,
-            "end_date": end_date,
-            "count": 0,
-            "message": "해당 기간에 데이터가 없습니다."
-        }
-
-    prices = [r["value"] for r in records]
-
-    avg_price = sum(prices) / len(prices)
-    high_price = max(prices)
-    low_price = min(prices)
-
-    oldest = records[0]["value"]
-    latest = records[-1]["value"]
-
-    change_percent = ((latest - oldest) / oldest) * 100 if oldest != 0 else 0
-
-    if change_percent > 0:
-        trend = "상승"
-    elif change_percent < 0:
-        trend = "하락"
-    else:
-        trend = "보합"
-
-    return {
-        "symbol": symbol,
-        "period": period,
-        "summary 기준": "전체 데이터" if period is None else f"최근 {period}일",
-        "start_date": records[0]["date"],
-        "end_date": records[-1]["date"],
-        "count": len(prices),
-        "current_price": round(latest, 2),
-        "average_price": round(avg_price, 2),
-        "high_price": round(high_price, 2),
-        "low_price": round(low_price, 2),
-        "change_percent": round(change_percent, 2),
-        "trend": trend
-    }
 
 
 # ===== 차트용 데이터 =====
 @router.get("/history")
 async def get_history(symbol: str = Query("NVDA")):
     symbol = validate_symbol(symbol)
+    records = list(reversed(read_records(symbol)))
+    return {"symbol": symbol, "window_limit": WINDOW_LIMIT,
+            "dates": [row["date"] for row in records],
+            "prices": [row["value"] for row in records]}
 
-    docs = db.collection("data") \
-        .where("symbol", "==", symbol) \
-        .stream()
-
-    records = []
-
-    for doc in docs:
-        d = doc.to_dict()
-        records.append({
-            "date": d["date"],
-            "value": d["value"]
-        })
-
-    if not records:
-        return {"symbol": symbol, "dates": [], "prices": []}
-
-    records.sort(key=lambda x: x["date"])
-
-    dates = [r["date"] for r in records]
-    prices = [r["value"] for r in records]
-
-    return {
-        "symbol": symbol,
-        "dates": dates,
-        "prices": prices
-    }
 
 
 # 전체 종목의 목표가 도달 기록 (새로고침 후에도 확인 가능)
@@ -194,26 +102,12 @@ async def create_data(item: DataItem):
 
 # 2. GET /api/data - 목록 조회
 @router.get("")
-async def list_data(symbol: str = Query(None)):
-    query = db.collection("data")
-
+async def list_data(symbol: str = Query(None), view: Literal["recent", "alerts"] = Query("recent")):
     if symbol:
         symbol = validate_symbol(symbol)
-        query = query.where("symbol", "==", symbol)
+    # 오래된 자료의 활성/완료 알림은 별도 목록에서 계속 편집할 수 있습니다.
+    return read_records(symbol, alerts_only=(view == "alerts"))
 
-    docs = query.stream()
-
-    result = [
-        {
-            "id": doc.id,
-            **doc.to_dict()
-        }
-        for doc in docs
-    ]
-
-    result.sort(key=lambda x: x["date"], reverse=True)
-
-    return result
 
 
 # 3. PUT /api/data/{id} - 수정

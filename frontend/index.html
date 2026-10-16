@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Insight AI</title>
-  <link rel="stylesheet" href="style.css?v=20261016-alert1">
+  <link rel="stylesheet" href="style.css?v=20261016-window100">
   <!-- 📊 Chart.js 라이브러리 추가! -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -64,7 +64,7 @@
 
 <!-- 📊 차트 영역 (새로 추가!) -->
 <section class="chart-section">
-    <h2 class="chart-title">📊 주가 차트</h2>
+    <h2 class="chart-title">📊 최근 100일 주가 차트</h2>
     <canvas id="priceChart"></canvas><p id="chartStatus" role="status"></p>
 </section>
 
@@ -128,6 +128,7 @@
     <button id="dataCancelBtn" type="button" hidden>수정 취소</button></div>
     <p class="data-form-note">목표가는 저장 가격과 별도입니다. 저장 후 데이터 갱신 시 마지막 제공 종가로 한 번 알립니다.</p>
   </form>
+  <div class="data-list-tools"><label>목록 보기 <select id="dataListMode"><option value="recent">최근 100개 자료</option><option value="alerts">알림 설정 자료 전체</option></select></label></div>
   <!-- 데이터 목록 (스크롤 영역!) -->
   <div class="data-table-wrap">
     <table class="data-table">
@@ -158,6 +159,6 @@
   🌙 다크모드
 </button>
 
-  <script src="app.js?v=20261016-alert1"></script>
+  <script src="app.js?v=20261016-window100"></script>
 </body>
 </html>
